@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.SeekBar
 import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -26,6 +27,7 @@ import androidx.media3.exoplayer.mediacodec.MediaCodecUtil
 import com.lizongying.mytv0.data.SourceType
 import com.lizongying.mytv0.databinding.PlayerBinding
 import com.lizongying.mytv0.models.TVModel
+import java.util.Locale
 
 
 class PlayerFragment : Fragment() {
@@ -38,6 +40,8 @@ class PlayerFragment : Fragment() {
 
     private val handler = Handler(Looper.myLooper()!!)
     private val delayHideVolume = 2 * 1000L
+    private val delayHideSeek = 5 * 1000L
+    private var seekBarDragging = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -49,8 +53,149 @@ class PlayerFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        initSeekBar()
         updatePlayer()
         (activity as MainActivity).ready(TAG)
+    }
+
+    // ===== 回看时移条 =====
+
+    private fun initSeekBar() {
+        binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    binding.seekPosition.text = formatSeekTime(progress * 1000L)
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                seekBarDragging = true
+                handler.removeCallbacks(hideSeekRunnable)
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                seekBarDragging = false
+                seekBar?.let {
+                    player?.seekTo(it.progress * 1000L)
+                }
+                scheduleHideSeek()
+            }
+        })
+    }
+
+    fun isCatchup(): Boolean {
+        return tvModel?.isCatchup == true
+    }
+
+    fun isSeekVisible(): Boolean {
+        return binding.seekOverlay.visibility == View.VISIBLE
+    }
+
+    fun showSeekOverlay() {
+        val tv = tvModel ?: return
+        if (!tv.isCatchup) {
+            return
+        }
+        val title = if (tv.catchupTitle.isEmpty()) tv.tv.title else tv.catchupTitle
+        binding.seekTitle.text = "${R.string.catchup_playing.getString()} · $title  (${
+            Utils.getDateFormat("HH:mm", tv.catchupBegin.toInt())
+        }-${Utils.getDateFormat("HH:mm", tv.catchupEnd.toInt())})"
+        binding.seekOverlay.visibility = View.VISIBLE
+        handler.removeCallbacks(updateSeekRunnable)
+        handler.post(updateSeekRunnable)
+        scheduleHideSeek()
+    }
+
+    fun hideSeekOverlay() {
+        binding.seekOverlay.visibility = View.GONE
+        handler.removeCallbacks(updateSeekRunnable)
+        handler.removeCallbacks(hideSeekRunnable)
+    }
+
+    private fun scheduleHideSeek() {
+        handler.removeCallbacks(hideSeekRunnable)
+        handler.postDelayed(hideSeekRunnable, delayHideSeek)
+    }
+
+    private val hideSeekRunnable = Runnable {
+        if (!seekBarDragging && player?.isPlaying != false) {
+            hideSeekOverlay()
+        } else {
+            scheduleHideSeek()
+        }
+    }
+
+    private val updateSeekRunnable = object : Runnable {
+        override fun run() {
+            val p = player ?: return
+            if (_binding == null) {
+                return
+            }
+            val duration = p.duration
+            if (duration > 0) {
+                binding.seekBar.max = (duration / 1000).toInt()
+                if (!seekBarDragging) {
+                    binding.seekBar.progress = (p.currentPosition / 1000).toInt()
+                    binding.seekPosition.text = formatSeekTime(p.currentPosition)
+                }
+                binding.seekDuration.text = formatSeekTime(duration)
+            }
+            handler.postDelayed(this, 1000)
+        }
+    }
+
+    private fun formatSeekTime(ms: Long): String {
+        val totalSec = (ms / 1000).coerceAtLeast(0)
+        val h = totalSec / 3600
+        val m = (totalSec % 3600) / 60
+        val s = totalSec % 60
+        return if (h > 0) {
+            String.format(Locale.CHINA, "%d:%02d:%02d", h, m, s)
+        } else {
+            String.format(Locale.CHINA, "%02d:%02d", m, s)
+        }
+    }
+
+    // 快进/快退（秒），并弹出时移条
+    fun seekOffset(seconds: Int) {
+        val p = player ?: return
+        if (!isCatchup()) {
+            return
+        }
+        val duration = p.duration
+        var target = p.currentPosition + seconds * 1000L
+        target = target.coerceAtLeast(0)
+        if (duration > 0) {
+            target = target.coerceAtMost(duration)
+        }
+        p.seekTo(target)
+        showSeekOverlay()
+    }
+
+    // 暂停/继续，并弹出时移条
+    fun togglePlayPause() {
+        val p = player ?: return
+        if (!isCatchup()) {
+            return
+        }
+        if (p.isPlaying) {
+            p.pause()
+        } else {
+            // 回看流播完暂停在末尾时，继续播直接回直播
+            if (p.playbackState == Player.STATE_ENDED) {
+                returnToLive()
+                return
+            }
+            p.play()
+        }
+        showSeekOverlay()
+    }
+
+    // 退出回看返回直播
+    fun returnToLive() {
+        hideSeekOverlay()
+        tvModel?.returnToLive()
+        R.string.back_to_live.showToast()
     }
 
     @OptIn(UnstableApi::class)
@@ -133,8 +278,21 @@ class PlayerFragment : Fragment() {
                     tv.setErrInfo("")
                     tv.retryTimes = 0
                     handler.removeCallbacks(autoRecoverRunnable)
+                    // 回看起播时弹出时移条提示可拖动
+                    if (tv.isCatchup) {
+                        showSeekOverlay()
+                    }
                 } else {
                     Log.i(TAG, "${tv.tv.title} 播放停止")
+                }
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                super.onPlaybackStateChanged(playbackState)
+                // 回看播完自动回直播（REPEAT_MODE_OFF 时才会走到 ENDED）
+                if (playbackState == Player.STATE_ENDED && tvModel?.isCatchup == true) {
+                    Log.i(TAG, "catchup ended, return to live")
+                    returnToLive()
                 }
             }
 
@@ -213,6 +371,11 @@ class PlayerFragment : Fragment() {
         handler.removeCallbacks(retryRunnable)
         handler.removeCallbacks(autoRecoverRunnable)
         this.tvModel = tvModel
+        // 回看是有限长流：关闭循环以便播完回直播；直播维持循环
+        player?.repeatMode = if (tvModel.isCatchup) Player.REPEAT_MODE_OFF else REPEAT_MODE_ALL
+        if (!tvModel.isCatchup) {
+            hideSeekOverlay()
+        }
         player?.run {
             tvModel.getVideoUrl() ?: return
 
@@ -319,6 +482,10 @@ class PlayerFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         if (player?.isPlaying == false) {
+            if (tvModel?.isCatchup == true) {
+                // 回看模式：保留暂停位置，不跳直播点
+                return
+            }
             // 待机唤醒/切回前台：直播流挂起久了 position 已失效，
             // 直接回直播点重新起播，失败则走完整重试流程
             player?.seekToDefaultPosition()
@@ -338,6 +505,8 @@ class PlayerFragment : Fragment() {
         super.onDestroy()
         handler.removeCallbacks(retryRunnable)
         handler.removeCallbacks(autoRecoverRunnable)
+        handler.removeCallbacks(updateSeekRunnable)
+        handler.removeCallbacks(hideSeekRunnable)
         player?.release()
     }
 

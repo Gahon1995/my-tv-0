@@ -27,6 +27,11 @@
     <string name="play_error">信號中斷，正在自動恢復…</string>
     <string name="play_error_retry">信號中斷，正在自動恢復，請稍候…</string>
     <string name="network_recovered">網絡已恢復</string>
+    <string name="catchup_hint">確認鍵：暫停/播放 · 左右鍵：快退/快進 · 返回鍵：回直播</string>
+    <string name="catchup_playing">回看</string>
+    <string name="catchup_not_supported">該頻道不支持回看</string>
+    <string name="catchup_future_program">節目還未開始</string>
+    <string name="back_to_live">已返回直播</string>
     <string name="elder_mode">大字模式</string>
     <string name="restart_to_apply">重啟應用後生效</string>
     <string name="file_not_exist">文件不存在</string>

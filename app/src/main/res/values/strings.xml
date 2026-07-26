@@ -27,6 +27,11 @@
     <string name="play_error">Play error</string>
     <string name="play_error_retry">Signal lost, retrying automatically…</string>
     <string name="network_recovered">Network recovered</string>
+    <string name="catchup_hint">OK: play/pause · ◀▶: seek · Back: live</string>
+    <string name="catchup_playing">Playback</string>
+    <string name="catchup_not_supported">This channel does not support playback</string>
+    <string name="catchup_future_program">Program not started yet</string>
+    <string name="back_to_live">Back to live</string>
     <string name="elder_mode">Big Font Mode</string>
     <string name="restart_to_apply">Restart app to apply</string>
     <string name="file_not_exist">File does not exist</string>

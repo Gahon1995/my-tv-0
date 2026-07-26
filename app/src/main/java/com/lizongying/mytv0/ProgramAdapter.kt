@@ -52,6 +52,10 @@ class ProgramAdapter(
             }
         }
 
+        view.setOnClickListener {
+            listener?.onItemClicked(epg)
+        }
+
         view.setOnKeyListener { _, keyCode, event: KeyEvent? ->
             if (event?.action == KeyEvent.ACTION_UP) {
                 if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
@@ -59,6 +63,11 @@ class ProgramAdapter(
                 }
             }
             if (event?.action == KeyEvent.ACTION_DOWN) {
+                // 确认键：回看该节目
+                if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
+                    listener?.onItemClicked(epg)
+                    return@setOnKeyListener true
+                }
                 // If it is already the first item and you continue to move up...
                 if (keyCode == KeyEvent.KEYCODE_DPAD_UP && position == 0) {
                     val p = getItemCount() - 1
@@ -151,6 +160,7 @@ class ProgramAdapter(
 
     interface ItemListener {
         fun onItemFocusChange(epg: EPG, hasFocus: Boolean)
+        fun onItemClicked(epg: EPG)
         fun onKey(keyCode: Int): Boolean
     }
 

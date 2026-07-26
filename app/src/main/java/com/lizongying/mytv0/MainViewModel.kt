@@ -479,6 +479,13 @@ class MainViewModel : ViewModel() {
                 val numRegex = Regex("""tvg-chno="([^"]+)"""")
                 val epgRegex = Regex("""x-tvg-url="([^"]+)"""")
                 val groupRegex = Regex("""group-title="([^"]+)"""")
+                // 回看属性：catchup="append/default/shift" catchup-source="...${(b)yyyyMMddHHmmss}..."
+                val catchupRegex = Regex("""catchup="([^"]+)"""")
+                val catchupSourceRegex = Regex("""catchup-source="([^"]+)"""")
+
+                // #EXTM3U 头部的全局回看设置（频道未单独声明时继承）
+                var globalCatchup: String? = null
+                var globalCatchupSource: String? = null
 
                 val l = mutableListOf<TV>()
                 val tvMap = mutableMapOf<String, List<TV>>()
@@ -491,6 +498,9 @@ class MainViewModel : ViewModel() {
                     }
                     if (trimmedLine.startsWith("#EXTM3U")) {
                         epgUrl = epgRegex.find(trimmedLine)?.groupValues?.get(1)?.trim()
+                        globalCatchup = catchupRegex.find(trimmedLine)?.groupValues?.get(1)?.trim()
+                        globalCatchupSource =
+                            catchupSourceRegex.find(trimmedLine)?.groupValues?.get(1)?.trim()
                     } else if (trimmedLine.startsWith("#EXTINF")) {
                         val key = tv.group + tv.name
                         if (key.isNotEmpty()) {
@@ -506,6 +516,12 @@ class MainViewModel : ViewModel() {
                         tv.number =
                             numRegex.find(info.first())?.groupValues?.get(1)?.trim()?.toInt() ?: -1
                         tv.group = groupRegex.find(info.first())?.groupValues?.get(1)?.trim() ?: ""
+                        // 频道级 catchup 优先，否则继承全局
+                        tv.catchup = catchupRegex.find(info.first())?.groupValues?.get(1)?.trim()
+                            ?: globalCatchup
+                        tv.catchupSource =
+                            catchupSourceRegex.find(info.first())?.groupValues?.get(1)?.trim()
+                                ?: globalCatchupSource
                     } else if (trimmedLine.startsWith("#EXTVLCOPT:http-")) {
                         val keyValue =
                             trimmedLine.substringAfter("#EXTVLCOPT:http-").split("=", limit = 2)
@@ -554,6 +570,8 @@ class MainViewModel : ViewModel() {
                         SourceType.UNKNOWN,
                         t0.number,
                         emptyList(),
+                        t0.catchup,
+                        t0.catchupSource,
                     )
                     l.add(t1)
                 }

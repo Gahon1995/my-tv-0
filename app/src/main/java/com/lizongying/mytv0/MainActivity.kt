@@ -320,6 +320,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+            // 回看中首次单击先唤出时移条，再次单击才打开菜单
+            if (playerFragment.isCatchup() && !playerFragment.isSeekVisible()) {
+                playerFragment.showSeekOverlay()
+                return true
+            }
             showFragment(menuFragment)
             return true
         }
@@ -652,6 +657,16 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        // 回看中按返回：先收起时移条，再退回直播
+        if (playerFragment.isCatchup()) {
+            if (playerFragment.isSeekVisible()) {
+                playerFragment.hideSeekOverlay()
+            } else {
+                playerFragment.returnToLive()
+            }
+            return
+        }
+
         if (doubleBackToExitPressedOnce) {
             super.onBackPressed()
             return
@@ -796,6 +811,12 @@ class MainActivity : AppCompatActivity() {
                     return true
                 }
 
+                // 回看中：确认键=暂停/播放
+                if (playerFragment.isCatchup() && noFragmentVisible()) {
+                    playerFragment.togglePlayPause()
+                    return true
+                }
+
                 showFragment(menuFragment)
             }
 
@@ -805,7 +826,37 @@ class MainActivity : AppCompatActivity() {
                     return true
                 }
 
+                // 回看中：确认键=暂停/播放
+                if (playerFragment.isCatchup() && noFragmentVisible()) {
+                    playerFragment.togglePlayPause()
+                    return true
+                }
+
                 showFragment(menuFragment)
+            }
+
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+            KeyEvent.KEYCODE_MEDIA_PLAY,
+            KeyEvent.KEYCODE_MEDIA_PAUSE,
+                -> {
+                if (playerFragment.isCatchup()) {
+                    playerFragment.togglePlayPause()
+                    return true
+                }
+            }
+
+            KeyEvent.KEYCODE_MEDIA_REWIND -> {
+                if (playerFragment.isCatchup()) {
+                    playerFragment.seekOffset(-SEEK_STEP_SECONDS)
+                    return true
+                }
+            }
+
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
+                if (playerFragment.isCatchup()) {
+                    playerFragment.seekOffset(SEEK_STEP_SECONDS)
+                    return true
+                }
             }
 
             KeyEvent.KEYCODE_DPAD_UP -> {
@@ -825,14 +876,32 @@ class MainActivity : AppCompatActivity() {
             }
 
             KeyEvent.KEYCODE_DPAD_LEFT -> {
+                // 回看中：左键=快退
+                if (playerFragment.isCatchup() && noFragmentVisible()) {
+                    playerFragment.seekOffset(-SEEK_STEP_SECONDS)
+                    return true
+                }
                 showProgram()
             }
 
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                // 回看中：右键=快进
+                if (playerFragment.isCatchup() && noFragmentVisible()) {
+                    playerFragment.seekOffset(SEEK_STEP_SECONDS)
+                    return true
+                }
                 showSetting()
             }
         }
         return false
+    }
+
+    // 无任何浮层时才把按键交给回看时移控制
+    private fun noFragmentVisible(): Boolean {
+        return (!menuFragment.isAdded || menuFragment.isHidden) &&
+                (!settingFragment.isAdded || settingFragment.isHidden) &&
+                (!programFragment.isAdded || programFragment.isHidden) &&
+                (!channelFragment.isAdded || !channelFragment.isVisible)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -925,5 +994,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
+        private const val SEEK_STEP_SECONDS = 30
     }
 }

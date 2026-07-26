@@ -17,10 +17,14 @@ import androidx.media3.exoplayer.rtsp.RtspMediaSource
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.lizongying.mytv0.SP
+import com.lizongying.mytv0.Utils
 import com.lizongying.mytv0.data.EPG
 import com.lizongying.mytv0.data.SourceType
 import com.lizongying.mytv0.data.TV
 import com.lizongying.mytv0.requests.HttpClient
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
@@ -67,6 +71,127 @@ class TVModel(var tv: TV) : ViewModel() {
         _epg.value = epg
     }
 
+    // ===== 回看/时移状态 =====
+    private var _isCatchup = false
+    val isCatchup: Boolean
+        get() = _isCatchup
+
+    // 回看窗口（unix 秒）
+    var catchupBegin = 0L
+        private set
+    var catchupEnd = 0L
+        private set
+    var catchupTitle = ""
+        private set
+
+    fun supportsCatchup(): Boolean {
+        val mode = tv.catchup?.lowercase() ?: return false
+        return when (mode) {
+            "append", "default" -> !tv.catchupSource.isNullOrEmpty()
+            else -> true // shift 等模式无需模板
+        }
+    }
+
+    // 播放指定时间段回看；通过 ready 触发正常播放流程
+    fun playCatchup(begin: Long, end: Long, title: String = "") {
+        catchupBegin = begin
+        catchupEnd = end
+        catchupTitle = title
+        _isCatchup = true
+        setErrInfo("")
+        retryTimes = 0
+        _ready.value = true
+    }
+
+    // 返回直播
+    fun returnToLive() {
+        if (!_isCatchup) {
+            return
+        }
+        _isCatchup = false
+        setErrInfo("")
+        retryTimes = 0
+        _ready.value = true
+    }
+
+    // ${(b)yyyyMMddHHmmss} / ${(e)yyyyMMddHHmmss} 时间格式模板
+    private val catchupFmtRegex = Regex("""\$\{\((b|e)\)([^}]+)\}""")
+
+    // 将 catchup 模板展开为实际回看地址
+    private fun expandCatchupTemplate(template: String): String {
+        val b = catchupBegin
+        val e = catchupEnd
+        val now = Utils.getDateTimestamp()
+        var s = catchupFmtRegex.replace(template) { m ->
+            val ts = if (m.groupValues[1] == "b") b else e
+            try {
+                SimpleDateFormat(m.groupValues[2], Locale.CHINA).format(Date(ts * 1000))
+            } catch (ex: Exception) {
+                m.value
+            }
+        }
+        // 常见 token 变体（diyp/TiviMate 生态）
+        val tokens = mapOf(
+            "{utc}" to b.toString(),
+            "\${utc}" to b.toString(),
+            "{utcend}" to e.toString(),
+            "\${utcend}" to e.toString(),
+            "{start}" to b.toString(),
+            "\${start}" to b.toString(),
+            "{end}" to e.toString(),
+            "\${end}" to e.toString(),
+            "{lutc}" to now.toString(),
+            "\${lutc}" to now.toString(),
+            "{now}" to now.toString(),
+            "\${now}" to now.toString(),
+            "{timestamp}" to now.toString(),
+            "\${timestamp}" to now.toString(),
+            "{offset}" to (now - b).toString(),
+            "\${offset}" to (now - b).toString(),
+            "{duration}" to (e - b).toString(),
+            "\${duration}" to (e - b).toString(),
+        )
+        for ((k, v) in tokens) {
+            s = s.replace(k, v)
+        }
+        return s
+    }
+
+    // 根据直播地址构造回看地址；失败返回 null
+    fun buildCatchupUrl(liveUrl: String): String? {
+        val mode = tv.catchup?.lowercase() ?: return null
+        val src = tv.catchupSource ?: ""
+        val template = when (mode) {
+            "append" -> {
+                if (src.isEmpty()) {
+                    return null
+                }
+                // 避免拼出 "??" 或重复分隔符
+                if (src.startsWith("?")) {
+                    if (liveUrl.endsWith("?") || liveUrl.endsWith("&")) {
+                        liveUrl + src.substring(1)
+                    } else if (liveUrl.contains("?")) {
+                        liveUrl + "&" + src.substring(1)
+                    } else {
+                        liveUrl + src
+                    }
+                } else {
+                    liveUrl + src
+                }
+            }
+
+            "default" -> if (src.isEmpty()) return null else src
+
+            "shift" -> {
+                val sep = if (liveUrl.contains("?")) "&" else "?"
+                "$liveUrl${sep}utc={utc}&lutc={lutc}"
+            }
+
+            else -> return null
+        }
+        return expandCatchupTemplate(template)
+    }
+
     private val _videoIndex = MutableLiveData<Int>()
     val videoIndex: LiveData<Int>
         get() = _videoIndex
@@ -78,7 +203,18 @@ class TVModel(var tv: TV) : ViewModel() {
             return null
         }
 
-        return tv.uris[videoIndexValue]
+        val liveUrl = tv.uris[videoIndexValue]
+
+        if (_isCatchup) {
+            val url = buildCatchupUrl(liveUrl)
+            if (url != null) {
+                return url
+            }
+            // 模板异常时回退直播，避免黑屏
+            _isCatchup = false
+        }
+
+        return liveUrl
     }
 
     private val _like = MutableLiveData<Boolean>()
@@ -97,6 +233,8 @@ class TVModel(var tv: TV) : ViewModel() {
         if (!retry) {
             setErrInfo("")
             retryTimes = 0
+            // 正常换台/重选：退出回看，回到直播
+            _isCatchup = false
 
             _videoIndex.value = max(0, min(tv.uris.size - 1, tv.videoIndex))
             sourceTypeIndex =

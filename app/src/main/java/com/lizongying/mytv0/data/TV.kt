@@ -16,6 +16,9 @@ data class TV(
     var sourceType: SourceType = SourceType.UNKNOWN,
     var number: Int = -1,
     var child: List<TV> = emptyList(),
+    // 回看：catchup 模式(append/default/shift) 与 URL 模板（来自 m3u catchup/catchup-source 属性）
+    var catchup: String? = null,
+    var catchupSource: String? = null,
 ) : Serializable {
 
     override fun toString(): String {

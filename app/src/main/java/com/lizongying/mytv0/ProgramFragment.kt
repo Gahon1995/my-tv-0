@@ -105,6 +105,26 @@ class ProgramFragment : Fragment(), ProgramAdapter.ItemListener {
         handler.postDelayed(hideRunnable, delay)
     }
 
+    override fun onItemClicked(epg: EPG) {
+        val tvModel = viewModel.groupModel.getCurrent() ?: return
+        val now = Utils.getDateTimestamp()
+
+        if (epg.beginTime >= now) {
+            R.string.catchup_future_program.showToast()
+            return
+        }
+
+        if (!tvModel.supportsCatchup()) {
+            R.string.catchup_not_supported.showToast()
+            return
+        }
+
+        // 正在直播的节目：回看从开始到当前；已结束节目：完整时段
+        val end = if (epg.endTime.toLong() > now) now else epg.endTime.toLong()
+        tvModel.playCatchup(epg.beginTime.toLong(), end, epg.title)
+        hideSelf()
+    }
+
     override fun onKey(keyCode: Int): Boolean {
         return false
     }
