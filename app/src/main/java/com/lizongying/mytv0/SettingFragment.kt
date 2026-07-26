@@ -5,7 +5,6 @@ import MainViewModel.Companion.CACHE_FILE_NAME
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -15,14 +14,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.marginBottom
-import androidx.core.view.marginEnd
-import androidx.core.view.marginTop
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.lizongying.mytv0.ModalFragment.Companion.KEY_URL
 import com.lizongying.mytv0.SimpleServer.Companion.PORT
 import com.lizongying.mytv0.databinding.SettingBinding
+import com.lizongying.mytv0.view.FocusFx
 import kotlin.math.max
 import kotlin.math.min
 
@@ -45,7 +42,6 @@ class SettingFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val application = requireActivity().applicationContext as MyTVApplication
         val context = requireContext()
         val mainActivity = (activity as MainActivity)
 
@@ -54,83 +50,20 @@ class SettingFragment : Fragment() {
         binding.versionName.text = "v${context.appVersionName}"
         binding.version.text = "https://github.com/Gahon1995/my-tv-0"
 
-        val switchChannelReversal = _binding?.switchChannelReversal
-        switchChannelReversal?.isChecked = SP.channelReversal
-        switchChannelReversal?.setOnCheckedChangeListener { _, isChecked ->
-            SP.channelReversal = isChecked
+        // ===== 左侧导航 =====
+        setupNav()
+
+        // ===== ① 直播源 =====
+        binding.configUrlText.text = SP.configUrl ?: ""
+
+        binding.confirmConfig.setOnClickListener {
+            val sourcesFragment = SourcesFragment()
+            sourcesFragment.show(requireFragmentManager(), SourcesFragment.TAG)
             mainActivity.settingActive()
         }
 
-        val switchChannelNum = _binding?.switchChannelNum
-        switchChannelNum?.isChecked = SP.channelNum
-        switchChannelNum?.setOnCheckedChangeListener { _, isChecked ->
-            SP.channelNum = isChecked
-            mainActivity.settingActive()
-        }
-
-        val switchTime = _binding?.switchTime
-        switchTime?.isChecked = SP.time
-        switchTime?.setOnCheckedChangeListener { _, isChecked ->
-            SP.time = isChecked
-            mainActivity.settingActive()
-        }
-
-        val switchBootStartup = _binding?.switchBootStartup
-        switchBootStartup?.isChecked = SP.bootStartup
-        switchBootStartup?.setOnCheckedChangeListener { _, isChecked ->
-            SP.bootStartup = isChecked
-            mainActivity.settingActive()
-        }
-
-        val switchRepeatInfo = _binding?.switchRepeatInfo
-        switchRepeatInfo?.isChecked = SP.repeatInfo
-        switchRepeatInfo?.setOnCheckedChangeListener { _, isChecked ->
-            SP.repeatInfo = isChecked
-            mainActivity.settingActive()
-        }
-
-        val switchConfigAutoLoad = _binding?.switchConfigAutoLoad
-        switchConfigAutoLoad?.isChecked = SP.configAutoLoad
-        switchConfigAutoLoad?.setOnCheckedChangeListener { _, isChecked ->
-            SP.configAutoLoad = isChecked
-            mainActivity.settingActive()
-        }
-
-        val switchDefaultLike = _binding?.switchDefaultLike
-        switchDefaultLike?.isChecked = SP.defaultLike
-        switchDefaultLike?.setOnCheckedChangeListener { _, isChecked ->
-            SP.defaultLike = isChecked
-            mainActivity.settingActive()
-        }
-
-        val switchShowAllChannels = _binding?.switchShowAllChannels
-        switchShowAllChannels?.isChecked = SP.showAllChannels
-
-        val switchCompactMenu = _binding?.switchCompactMenu
-        switchCompactMenu?.isChecked = SP.compactMenu
-        switchCompactMenu?.setOnCheckedChangeListener { _, isChecked ->
-            SP.compactMenu = isChecked
-            mainActivity.updateMenuSize()
-            mainActivity.settingActive()
-        }
-
-        val switchDisplaySeconds = _binding?.switchDisplaySeconds
-        switchDisplaySeconds?.isChecked = SP.displaySeconds
-
-        val switchSoftDecode = _binding?.switchSoftDecode
-        switchSoftDecode?.isChecked = SP.softDecode
-        switchSoftDecode?.setOnCheckedChangeListener { _, isChecked ->
-            SP.softDecode = isChecked
-            mainActivity.switchSoftDecode()
-            mainActivity.settingActive()
-        }
-
-        val switchElderMode = _binding?.switchElderMode
-        switchElderMode?.isChecked = SP.elderMode
-        switchElderMode?.setOnCheckedChangeListener { _, isChecked ->
-            SP.elderMode = isChecked
-            R.string.restart_to_apply.showToast()
-            mainActivity.settingActive()
+        bindSwitch(binding.switchConfigAutoLoad, SP.configAutoLoad) {
+            SP.configAutoLoad = it
         }
 
         binding.remoteSettings.setOnClickListener {
@@ -138,30 +71,70 @@ class SettingFragment : Fragment() {
             val args = Bundle()
             args.putString(KEY_URL, server)
             imageModalFragment.arguments = args
-
             imageModalFragment.show(requireFragmentManager(), ModalFragment.TAG)
             mainActivity.settingActive()
         }
 
+        bindSwitch(binding.switchDefaultLike, SP.defaultLike) {
+            SP.defaultLike = it
+        }
+
+        binding.switchShowAllChannels.isChecked = SP.showAllChannels
+
+        // ===== ② 播放设置 =====
+        bindSwitch(binding.switchSoftDecode, SP.softDecode) {
+            SP.softDecode = it
+            mainActivity.switchSoftDecode()
+        }
+
+        bindSwitch(binding.switchRepeatInfo, SP.repeatInfo) {
+            SP.repeatInfo = it
+        }
+
+        bindSwitch(binding.switchChannelReversal, SP.channelReversal) {
+            SP.channelReversal = it
+        }
+
+        // ===== ③ 界面外观 =====
+        bindSwitch(binding.switchGlassBlur, SP.glassBlur) {
+            SP.glassBlur = it
+        }
+
+        bindSwitch(binding.switchElderMode, SP.elderMode) {
+            SP.elderMode = it
+            R.string.restart_to_apply.showToast()
+        }
+
+        bindSwitch(binding.switchChannelNum, SP.channelNum) {
+            SP.channelNum = it
+        }
+
+        bindSwitch(binding.switchTime, SP.time) {
+            SP.time = it
+        }
+
+        binding.switchDisplaySeconds.isChecked = SP.displaySeconds
+
+        bindSwitch(binding.switchCompactMenu, SP.compactMenu) {
+            SP.compactMenu = it
+            mainActivity.updateMenuSize()
+        }
+
+        // ===== ④ 更新与关于 =====
         binding.checkVersion.setOnClickListener {
             requestInstallPermissions()
             mainActivity.settingActive()
         }
 
-        binding.confirmConfig.setOnClickListener {
-            val sourcesFragment = SourcesFragment()
-
-            sourcesFragment.show(requireFragmentManager(), SourcesFragment.TAG)
-            mainActivity.settingActive()
+        bindSwitch(binding.switchBootStartup, SP.bootStartup) {
+            SP.bootStartup = it
         }
 
         binding.appreciate.setOnClickListener {
             val imageModalFragment = ModalFragment()
-
             val args = Bundle()
             args.putInt(ModalFragment.KEY_DRAWABLE_ID, R.drawable.appreciate)
             imageModalFragment.arguments = args
-
             imageModalFragment.show(requireFragmentManager(), ModalFragment.TAG)
             mainActivity.settingActive()
         }
@@ -174,34 +147,7 @@ class SettingFragment : Fragment() {
             requireActivity().finishAffinity()
         }
 
-        val txtTextSize =
-            application.px2PxFont(binding.versionName.textSize)
-
-        binding.content.layoutParams.width =
-            application.px2Px(binding.content.layoutParams.width)
-        binding.content.setPadding(
-            application.px2Px(binding.content.paddingLeft),
-            application.px2Px(binding.content.paddingTop),
-            application.px2Px(binding.content.paddingRight),
-            application.px2Px(binding.content.paddingBottom)
-        )
-
-        binding.name.textSize = application.px2PxFont(binding.name.textSize)
-        binding.version.textSize = txtTextSize
-        val layoutParamsVersion = binding.version.layoutParams as ViewGroup.MarginLayoutParams
-        layoutParamsVersion.topMargin = application.px2Px(binding.version.marginTop)
-        layoutParamsVersion.bottomMargin = application.px2Px(binding.version.marginBottom)
-        binding.version.layoutParams = layoutParamsVersion
-
-        val btnWidth =
-            application.px2Px(binding.confirmConfig.layoutParams.width)
-
-        val btnLayoutParams =
-            binding.confirmConfig.layoutParams as ViewGroup.MarginLayoutParams
-        btnLayoutParams.marginEnd = application.px2Px(binding.confirmConfig.marginEnd)
-
-        binding.versionName.textSize = txtTextSize
-
+        // 焦点态：按钮文字颜色跟随
         for (i in listOf(
             binding.remoteSettings,
             binding.confirmConfig,
@@ -210,85 +156,72 @@ class SettingFragment : Fragment() {
             binding.exit,
             binding.appreciate,
         )) {
-            i.layoutParams.width = btnWidth
-            i.textSize = txtTextSize
-            i.layoutParams = btnLayoutParams
-            i.setOnFocusChangeListener { _, hasFocus ->
-                if (hasFocus) {
-                    i.background = ColorDrawable(
-                        ContextCompat.getColor(
-                            context,
-                            R.color.focus
-                        )
-                    )
-                    i.setTextColor(
-                        ContextCompat.getColor(
-                            context,
-                            R.color.white
-                        )
-                    )
-                } else {
-                    i.background = ColorDrawable(
-                        ContextCompat.getColor(
-                            context,
-                            R.color.description_blur
-                        )
-                    )
-                    i.setTextColor(
-                        ContextCompat.getColor(
-                            context,
-                            R.color.blur
-                        )
-                    )
-                }
-            }
-        }
-
-        val textSizeSwitch = application.px2PxFont(binding.switchChannelReversal.textSize)
-
-        val layoutParamsSwitch =
-            binding.switchChannelReversal.layoutParams as ViewGroup.MarginLayoutParams
-        layoutParamsSwitch.topMargin =
-            application.px2Px(binding.switchChannelReversal.marginTop)
-
-        for (i in listOf(
-            binding.switchChannelReversal,
-            binding.switchChannelNum,
-            binding.switchTime,
-            binding.switchBootStartup,
-            binding.switchRepeatInfo,
-            binding.switchConfigAutoLoad,
-            binding.switchDefaultLike,
-            binding.switchShowAllChannels,
-            binding.switchCompactMenu,
-            binding.switchDisplaySeconds,
-            binding.switchSoftDecode,
-            binding.switchElderMode,
-        )) {
-            i.textSize = textSizeSwitch
-            i.layoutParams = layoutParamsSwitch
-            i.setOnFocusChangeListener { _, hasFocus ->
-                if (hasFocus) {
-                    i.setTextColor(
-                        ContextCompat.getColor(
-                            context,
-                            R.color.focus
-                        )
-                    )
-                } else {
-                    i.setTextColor(
-                        ContextCompat.getColor(
-                            context,
-                            R.color.title_blur
-                        )
-                    )
-                }
+            i.setOnFocusChangeListener { v, hasFocus ->
+                FocusFx.apply(v, hasFocus)
+                mainActivity.settingActive()
             }
         }
 
         updateManager = UpdateManager(context, context.appVersionCode)
 
         return binding.root
+    }
+
+    /** 统一装配开关：初值 + 变更回调 + 焦点动效 */
+    private fun bindSwitch(
+        switch: androidx.appcompat.widget.SwitchCompat,
+        initial: Boolean,
+        onChange: (Boolean) -> Unit
+    ) {
+        switch.isChecked = initial
+        switch.setOnCheckedChangeListener { _, isChecked ->
+            onChange(isChecked)
+            (activity as MainActivity).settingActive()
+        }
+        switch.setOnFocusChangeListener { v, hasFocus ->
+            FocusFx.apply(v, hasFocus)
+            (activity as MainActivity).settingActive()
+        }
+    }
+
+    // ===== 左侧导航切换 =====
+
+    private fun setupNav() {
+        val navToGroup = mapOf(
+            binding.navSource to binding.groupSource,
+            binding.navPlay to binding.groupPlay,
+            binding.navDisplay to binding.groupDisplay,
+            binding.navAbout to binding.groupAbout,
+        )
+
+        for ((nav, group) in navToGroup) {
+            nav.setOnFocusChangeListener { v, hasFocus ->
+                FocusFx.apply(v, hasFocus)
+                if (hasFocus) {
+                    showGroup(navToGroup, group)
+                    nav.setTextColor(
+                        ContextCompat.getColor(requireContext(), R.color.text_primary)
+                    )
+                } else {
+                    nav.setTextColor(
+                        ContextCompat.getColor(requireContext(), R.color.text_tertiary)
+                    )
+                }
+                (activity as MainActivity).settingActive()
+            }
+            nav.setOnClickListener {
+                showGroup(navToGroup, group)
+            }
+        }
+    }
+
+    private fun showGroup(
+        navToGroup: Map<out View, View>,
+        target: View
+    ) {
+        for (group in navToGroup.values) {
+            group.visibility = if (group === target) View.VISIBLE else View.GONE
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -303,6 +236,10 @@ class SettingFragment : Fragment() {
 
         binding.switchDisplaySeconds.setOnCheckedChangeListener { _, isChecked ->
             viewModel.setDisplaySeconds(isChecked)
+        }
+        binding.switchDisplaySeconds.setOnFocusChangeListener { v, hasFocus ->
+            FocusFx.apply(v, hasFocus)
+            mainActivity.settingActive()
         }
 
         binding.clear.setOnClickListener {
@@ -321,11 +258,12 @@ class SettingFragment : Fragment() {
 
             imageHelper.clearImage()
 
-            // TODO update player
             SP.softDecode = SP.DEFAULT_SOFT_DECODE
+            SP.glassBlur = SP.DEFAULT_GLASS_BLUR
 
             SP.configUrl = SP.DEFAULT_CONFIG_URL
             Log.i(TAG, "config url: ${SP.configUrl}")
+            binding.configUrlText.text = SP.configUrl ?: ""
             context.deleteFile(CACHE_FILE_NAME)
             viewModel.reset(context)
             confirmConfig()
@@ -336,10 +274,6 @@ class SettingFragment : Fragment() {
 
             SP.deleteLike()
             Log.i(TAG, "clear like")
-
-//            SP.positionGroup = SP.DEFAULT_POSITION_GROUP
-//            viewModel.groupModel.setPosition(SP.DEFAULT_POSITION_GROUP)
-//            viewModel.groupModel.setPositionPlaying(SP.DEFAULT_POSITION_GROUP)
 
             SP.positionGroup = viewModel.groupModel.defaultPosition()
             viewModel.groupModel.initPosition()
@@ -362,6 +296,9 @@ class SettingFragment : Fragment() {
             SP.epg = SP.DEFAULT_EPG
             viewModel.updateEPG()
 
+            // 同步界面开关状态
+            syncSwitchStates()
+
             R.string.config_restored.showToast()
         }
 
@@ -371,8 +308,29 @@ class SettingFragment : Fragment() {
 
             mainActivity.settingActive()
         }
+        binding.switchShowAllChannels.setOnFocusChangeListener { v, hasFocus ->
+            FocusFx.apply(v, hasFocus)
+            mainActivity.settingActive()
+        }
 
-        binding.remoteSettings.requestFocus()
+        binding.navSource.requestFocus()
+    }
+
+    /** 恢复默认后刷新所有开关显示 */
+    private fun syncSwitchStates() {
+        binding.switchChannelReversal.isChecked = SP.channelReversal
+        binding.switchChannelNum.isChecked = SP.channelNum
+        binding.switchTime.isChecked = SP.time
+        binding.switchDisplaySeconds.isChecked = SP.displaySeconds
+        binding.switchBootStartup.isChecked = SP.bootStartup
+        binding.switchRepeatInfo.isChecked = SP.repeatInfo
+        binding.switchConfigAutoLoad.isChecked = SP.configAutoLoad
+        binding.switchDefaultLike.isChecked = SP.defaultLike
+        binding.switchShowAllChannels.isChecked = SP.showAllChannels
+        binding.switchCompactMenu.isChecked = SP.compactMenu
+        binding.switchSoftDecode.isChecked = SP.softDecode
+        binding.switchElderMode.isChecked = SP.elderMode
+        binding.switchGlassBlur.isChecked = SP.glassBlur
     }
 
     private fun confirmConfig() {
@@ -414,13 +372,22 @@ class SettingFragment : Fragment() {
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
         if (_binding != null && !hidden) {
-            binding.remoteSettings.requestFocus()
+            binding.configUrlText.text = SP.configUrl ?: ""
+            FocusFx.panelIn(binding.settingPanel)
+            binding.navSource.requestFocus()
         }
     }
 
-    private fun checkAndAddPermission(context: Context, permission: String, permissionsList: MutableList<String>) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
+    private fun checkAndAddPermission(
+        context: Context,
+        permission: String,
+        permissionsList: MutableList<String>
+    ) {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                permission
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
             permissionsList.add(permission)
         }
     }
@@ -506,4 +473,3 @@ class SettingFragment : Fragment() {
         const val PERMISSION_READ_EXTERNAL_STORAGE_REQUEST_CODE = 2
     }
 }
-
