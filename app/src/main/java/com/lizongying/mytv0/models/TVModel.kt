@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.UdpDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.datasource.rtmp.RtmpDataSource
 import androidx.media3.exoplayer.dash.DashMediaSource
@@ -137,7 +138,7 @@ class TVModel(var tv: TV) : ViewModel() {
                 listOf(SourceType.RTSP)
             } else if (scheme.lowercase() == "rtmp") {
                 listOf(SourceType.RTMP)
-            } else if (scheme.lowercase() == "rtp") {
+            } else if (scheme.lowercase() == "rtp" || scheme.lowercase() == "udp") {
                 listOf(SourceType.RTP)
             } else {
                 listOf(SourceType.HLS, SourceType.PROGRESSIVE)
@@ -202,7 +203,12 @@ class TVModel(var tv: TV) : ViewModel() {
                     .createMediaSource(mediaItem)
             }
 
-            SourceType.RTP -> null
+            SourceType.RTP -> {
+                // 组播 rtp://,udp:// 通过 UdpDataSource 接收 (通常为 MPEG-TS 流)
+                val udpDataSource = DataSource.Factory { UdpDataSource(3000, 100_000) }
+                ProgressiveMediaSource.Factory(udpDataSource)
+                    .createMediaSource(mediaItem)
+            }
 
             SourceType.DASH -> DashMediaSource.Factory(httpDataSource).createMediaSource(mediaItem)
             SourceType.PROGRESSIVE -> ProgressiveMediaSource.Factory(httpDataSource)
