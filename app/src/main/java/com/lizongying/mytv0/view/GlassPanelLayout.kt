@@ -2,25 +2,26 @@ package com.lizongying.mytv0.view
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Matrix
 import android.graphics.Outline
-import android.graphics.RenderEffect
-import android.graphics.Shader
-import android.os.Build
+import android.graphics.Paint
+import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewOutlineProvider
 import android.widget.FrameLayout
-import android.widget.ImageView
+import androidx.core.content.ContextCompat
 import com.lizongying.mytv0.R
 
 /**
- * 液态玻璃面板容器：
- *  层0 blurLayer(ImageView, centerCrop) —— 视频抓帧模糊底图
- *  层1 玻璃渐变+描边 overlay (bg_glass_panel / bg_glass_pill)
- *  层2 业务内容 (XML 子节点)
+ * 液态玻璃面板容器。
  *
- * VISIBLE 时自动启动取景，GONE/DETACH 自动停止。
- * SP.glassBlur=false 或会话降级时底图为空，仅剩渐变仿玻璃。
+ * 模糊底图与玻璃渐变/描边均在 onDraw 中直接绘制（不作为子 View），
+ * 避免 match_parent 装饰层在 wrap_content 容器中把面板撑满全屏。
+ *
+ * VISIBLE 时自动启动视频抓帧取景，GONE/DETACH 自动停止。
+ * SP.glassBlur=false 或会话降级时无底图，仅剩渐变仿玻璃。
  */
 class GlassPanelLayout @JvmOverloads constructor(
     context: Context,
@@ -28,9 +29,18 @@ class GlassPanelLayout @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
-    private val blurLayer: ImageView
     private var blurHelper: GlassBlurHelper? = null
     private var radiusPx: Float
+    private val overlayDrawable: Drawable
+
+    private var blurBitmap: Bitmap? = null
+    private val bmpPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG).apply {
+        alpha = 170
+    }
+    private val bmpMatrix = Matrix()
+    private val basePaint = Paint().apply {
+        color = 0xB30D131B.toInt() // 70% 深底，保证列表可读性
+    }
 
     init {
         val ta = context.obtainStyledAttributes(attrs, R.styleable.GlassPanelLayout)
@@ -44,22 +54,9 @@ class GlassPanelLayout @JvmOverloads constructor(
         )
         ta.recycle()
 
-        // 模糊底图层（最底）
-        blurLayer = ImageView(context).apply {
-            scaleType = ImageView.ScaleType.CENTER_CROP
-            alpha = 0.85f
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                // 放大后的纹理再加一层 GPU 模糊消除颗粒感
-                setRenderEffect(
-                    RenderEffect.createBlurEffect(20f, 20f, Shader.TileMode.CLAMP)
-                )
-            }
-        }
-        addView(blurLayer, 0, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        overlayDrawable = ContextCompat.getDrawable(context, overlayRes)!!
 
-        // 玻璃渐变+描边覆盖层
-        val overlay = View(context).apply { setBackgroundResource(overlayRes) }
-        addView(overlay, 1, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        setWillNotDraw(false)
 
         // 圆角裁切
         clipToOutline = true
@@ -75,11 +72,40 @@ class GlassPanelLayout @JvmOverloads constructor(
         invalidateOutline()
     }
 
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        val w = width
+        val h = height
+        if (w == 0 || h == 0) return
+
+        // 深色底：保证任何视频画面下文字可读
+        canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), basePaint)
+
+        // 模糊底图 centerCrop 绘制（双线性放大 = 强模糊）
+        blurBitmap?.let {
+            if (!it.isRecycled) {
+                val scale = maxOf(w.toFloat() / it.width, h.toFloat() / it.height)
+                bmpMatrix.reset()
+                bmpMatrix.setScale(scale, scale)
+                bmpMatrix.postTranslate(
+                    (w - it.width * scale) / 2f,
+                    (h - it.height * scale) / 2f
+                )
+                canvas.drawBitmap(it, bmpMatrix, bmpPaint)
+            }
+        }
+
+        // 玻璃渐变 + 描边
+        overlayDrawable.setBounds(0, 0, w, h)
+        overlayDrawable.draw(canvas)
+    }
+
     private fun ensureHelper(): GlassBlurHelper {
         var h = blurHelper
         if (h == null) {
             h = GlassBlurHelper { bmp: Bitmap? ->
-                blurLayer.setImageBitmap(bmp)
+                blurBitmap = bmp
+                invalidate()
             }
             blurHelper = h
         }
@@ -102,7 +128,7 @@ class GlassPanelLayout @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         blurHelper?.release()
         blurHelper = null
-        blurLayer.setImageBitmap(null)
+        blurBitmap = null
         super.onDetachedFromWindow()
     }
 
@@ -110,7 +136,7 @@ class GlassPanelLayout @JvmOverloads constructor(
         super.onVisibilityAggregated(isVisible)
         syncBlurState()
         if (!isVisible) {
-            blurLayer.setImageBitmap(null)
+            blurBitmap = null
         }
     }
 }

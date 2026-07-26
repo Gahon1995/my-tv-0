@@ -132,7 +132,7 @@ class InfoFragment : Fragment() {
         } else {
             // 无 EPG：回退旧行为
             val last = epgList?.filter { it.beginTime < now }
-            b.desc.text = if (!last.isNullOrEmpty()) last.last().title else "精彩節目"
+            b.desc.text = if (!last.isNullOrEmpty()) last.last().title else "精彩节目"
             b.epgProgress.visibility = View.GONE
         }
     }
