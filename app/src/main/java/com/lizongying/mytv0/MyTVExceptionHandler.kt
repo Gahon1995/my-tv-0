@@ -3,13 +3,11 @@ package com.lizongying.mytv0
 import android.content.Context
 import android.os.Build
 import android.util.Log
-import com.lizongying.mytv0.requests.HttpClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
 import kotlin.system.exitProcess
 
 class MyTVExceptionHandler(val context: Context) : Thread.UncaughtExceptionHandler {
@@ -59,18 +57,18 @@ class MyTVExceptionHandler(val context: Context) : Thread.UncaughtExceptionHandl
     private suspend fun saveLog(crashInfo: String) {
         withContext(Dispatchers.IO) {
             try {
-                val request = okhttp3.Request.Builder()
-                    .url("https://lyrics.run/my-tv-0/v1/log")
-                    .method("POST", crashInfo.toRequestBody("text/plain".toMediaType()))
-                    .build()
-
-                HttpClient.okHttpClient.newCall(request).execute().use { response ->
-                    if (response.isSuccessful) {
-                        Log.i(TAG, "log success")
-                    } else {
-                        Log.e(TAG, "log failed: ${response.codeAlias()}")
-                    }
+                // 不再上报到原作者服务器（lyrics.run），改为仅保存到本地文件，
+                // 便于排查问题且保护隐私（原上报内容含设备型号等信息）
+                val dir = File(context.filesDir, "crash")
+                if (!dir.exists()) {
+                    dir.mkdirs()
                 }
+                val file = File(dir, "crash_${System.currentTimeMillis()}.log")
+                file.writeText(crashInfo)
+
+                // 只保留最近 10 个崩溃日志
+                dir.listFiles()?.sortedByDescending { it.name }?.drop(10)?.forEach { it.delete() }
+                Log.i(TAG, "crash log saved to $file")
             } catch (e: Exception) {
                 e.printStackTrace()
             }

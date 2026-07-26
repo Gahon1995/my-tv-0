@@ -75,11 +75,12 @@ class MainViewModel : ViewModel() {
     fun updateEPG() {
         viewModelScope.launch {
             var success = false
-            if (!epgUrl.isNullOrEmpty()) {
-                success = updateEPG(epgUrl!!)
+            // 用户设置的 EPG 优先；m3u 内嵌的 x-tvg-url 作为备选
+            if (!SP.epg.isNullOrEmpty()) {
+                success = updateEPG(SP.epg!!)
             }
-            if (!success && !SP.epg.isNullOrEmpty()) {
-                updateEPG(SP.epg!!)
+            if (!success && !epgUrl.isNullOrEmpty() && epgUrl != SP.epg) {
+                updateEPG(epgUrl!!)
             }
         }
     }
