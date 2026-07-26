@@ -5,6 +5,10 @@ import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Color
 import android.media.AudioManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -55,6 +59,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: MainViewModel
 
     private var isSafeToPerformFragmentTransactions = false
+
+    // 网络恢复自动重播（WiFi 闪断后老人无需任何操作）
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var hadNetwork = true
+    private var lastNetworkResume = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -220,6 +229,8 @@ class MainActivity : AppCompatActivity() {
             }
 
             server = SimpleServer(this, viewModel)
+
+            registerNetworkCallback()
 
             viewModel.updateConfig()
         }
@@ -846,9 +857,51 @@ class MainActivity : AppCompatActivity() {
         isSafeToPerformFragmentTransactions = false
     }
 
+    private fun registerNetworkCallback() {
+        try {
+            val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val request = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
+            networkCallback = object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    // 只在"曾断网"后的恢复时重播；启动时的首次 onAvailable 忽略
+                    if (hadNetwork) {
+                        return
+                    }
+                    hadNetwork = true
+                    val now = System.currentTimeMillis()
+                    if (now - lastNetworkResume < 5000) {
+                        return
+                    }
+                    lastNetworkResume = now
+                    runOnUiThread {
+                        Log.i(TAG, "network recovered, replay current channel")
+                        R.string.network_recovered.showToast()
+                        viewModel.groupModel.getCurrent()?.setReady()
+                    }
+                }
+
+                override fun onLost(network: Network) {
+                    hadNetwork = false
+                }
+            }
+            cm.registerNetworkCallback(request, networkCallback!!)
+        } catch (e: Exception) {
+            Log.e(TAG, "registerNetworkCallback", e)
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         server?.stop()
+        networkCallback?.let {
+            try {
+                val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                cm.unregisterNetworkCallback(it)
+            } catch (_: Exception) {
+            }
+        }
     }
 
     override fun attachBaseContext(base: Context) {
