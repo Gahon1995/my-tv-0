@@ -1,9 +1,7 @@
 package com.lizongying.mytv0.view
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Matrix
 import android.graphics.Outline
 import android.graphics.Paint
 import android.graphics.drawable.Drawable
@@ -15,13 +13,11 @@ import androidx.core.content.ContextCompat
 import com.lizongying.mytv0.R
 
 /**
- * 液态玻璃面板容器。
+ * 液态玻璃面板容器（遮罩方案）。
  *
- * 模糊底图与玻璃渐变/描边均在 onDraw 中直接绘制（不作为子 View），
- * 避免 match_parent 装饰层在 wrap_content 容器中把面板撑满全屏。
- *
- * VISIBLE 时自动启动视频抓帧取景，GONE/DETACH 自动停止。
- * SP.glassBlur=false 或会话降级时无底图，仅剩渐变仿玻璃。
+ * 由深色半透明底 + 玻璃渐变高光 + 描边构成，全部在 onDraw 绘制，
+ * 不参与布局测量（wrap_content 面板尺寸完全跟随内容）。
+ * 已移除视频抓帧模糊（对低端设备播放有干扰）。
  */
 class GlassPanelLayout @JvmOverloads constructor(
     context: Context,
@@ -29,17 +25,11 @@ class GlassPanelLayout @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
-    private var blurHelper: GlassBlurHelper? = null
     private var radiusPx: Float
     private val overlayDrawable: Drawable
 
-    private var blurBitmap: Bitmap? = null
-    private val bmpPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG).apply {
-        alpha = 170
-    }
-    private val bmpMatrix = Matrix()
     private val basePaint = Paint().apply {
-        color = 0xB30D131B.toInt() // 70% 深底，保证列表可读性
+        color = 0xCC10161F.toInt() // 80% 深底，保证文字可读
     }
 
     init {
@@ -78,65 +68,11 @@ class GlassPanelLayout @JvmOverloads constructor(
         val h = height
         if (w == 0 || h == 0) return
 
-        // 深色底：保证任何视频画面下文字可读
+        // 深色底
         canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), basePaint)
-
-        // 模糊底图 centerCrop 绘制（双线性放大 = 强模糊）
-        blurBitmap?.let {
-            if (!it.isRecycled) {
-                val scale = maxOf(w.toFloat() / it.width, h.toFloat() / it.height)
-                bmpMatrix.reset()
-                bmpMatrix.setScale(scale, scale)
-                bmpMatrix.postTranslate(
-                    (w - it.width * scale) / 2f,
-                    (h - it.height * scale) / 2f
-                )
-                canvas.drawBitmap(it, bmpMatrix, bmpPaint)
-            }
-        }
 
         // 玻璃渐变 + 描边
         overlayDrawable.setBounds(0, 0, w, h)
         overlayDrawable.draw(canvas)
-    }
-
-    private fun ensureHelper(): GlassBlurHelper {
-        var h = blurHelper
-        if (h == null) {
-            h = GlassBlurHelper { bmp: Bitmap? ->
-                blurBitmap = bmp
-                invalidate()
-            }
-            blurHelper = h
-        }
-        return h
-    }
-
-    private fun syncBlurState() {
-        if (isAttachedToWindow && isShown) {
-            ensureHelper().start()
-        } else {
-            blurHelper?.stop()
-        }
-    }
-
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        syncBlurState()
-    }
-
-    override fun onDetachedFromWindow() {
-        blurHelper?.release()
-        blurHelper = null
-        blurBitmap = null
-        super.onDetachedFromWindow()
-    }
-
-    override fun onVisibilityAggregated(isVisible: Boolean) {
-        super.onVisibilityAggregated(isVisible)
-        syncBlurState()
-        if (!isVisible) {
-            blurBitmap = null
-        }
     }
 }

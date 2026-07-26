@@ -5,7 +5,6 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
@@ -28,7 +27,6 @@ import androidx.media3.exoplayer.mediacodec.MediaCodecUtil
 import com.lizongying.mytv0.data.SourceType
 import com.lizongying.mytv0.databinding.PlayerBinding
 import com.lizongying.mytv0.models.TVModel
-import com.lizongying.mytv0.view.VideoTexture
 import java.util.Locale
 
 
@@ -57,8 +55,6 @@ class PlayerFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         initSeekBar()
         updatePlayer()
-        // 注册视频纹理供玻璃面板取景（surface_type=texture_view）
-        VideoTexture.view = binding.playerView.videoSurfaceView as? TextureView
         (activity as MainActivity).ready(TAG)
     }
 
@@ -521,9 +517,6 @@ class PlayerFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        if (VideoTexture.view === binding.playerView.videoSurfaceView) {
-            VideoTexture.view = null
-        }
         _binding = null
     }
 

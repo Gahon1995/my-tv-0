@@ -64,7 +64,7 @@ object SP {
 
     private const val KEY_GLASS_BLUR = "glass_blur"
 
-    const val DEFAULT_CHANNEL_REVERSAL = false
+    const val DEFAULT_CHANNEL_REVERSAL = true
     const val DEFAULT_CHANNEL_NUM = false
     const val DEFAULT_TIME = true
     const val DEFAULT_BOOT_STARTUP = false
