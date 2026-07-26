@@ -35,9 +35,7 @@ class TimeFragment : Fragment() {
 
         val application = requireActivity().applicationContext as MyTVApplication
 
-        binding.time.layoutParams.width = application.px2Px(binding.time.layoutParams.width)
-        binding.time.layoutParams.height = application.px2Px(binding.time.layoutParams.height)
-
+        // 胶囊容器 wrap_content，仅缩放 margin 与字体
         val layoutParams = binding.time.layoutParams as ViewGroup.MarginLayoutParams
         layoutParams.topMargin = application.px2Px(binding.time.marginTop)
         layoutParams.marginEnd = application.px2Px(binding.time.marginEnd)

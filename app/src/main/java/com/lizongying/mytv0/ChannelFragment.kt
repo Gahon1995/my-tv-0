@@ -35,9 +35,7 @@ class ChannelFragment : Fragment() {
 
         val application = requireActivity().applicationContext as MyTVApplication
 
-        binding.channel.layoutParams.width = application.px2Px(binding.channel.layoutParams.width)
-        binding.channel.layoutParams.height = application.px2Px(binding.channel.layoutParams.height)
-
+        // 胶囊容器 wrap_content，仅缩放 margin 与字体
         val layoutParams = binding.channel.layoutParams as ViewGroup.MarginLayoutParams
         layoutParams.topMargin = application.px2Px(binding.channel.marginTop)
         layoutParams.marginEnd = application.px2Px(binding.channel.marginEnd)
