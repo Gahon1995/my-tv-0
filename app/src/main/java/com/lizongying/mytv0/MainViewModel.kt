@@ -6,6 +6,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.util.Base64
+import com.google.gson.JsonParser
 import com.google.gson.JsonSyntaxException
 import com.lizongying.mytv0.ImageHelper
 import com.lizongying.mytv0.MyTVApplication
@@ -392,6 +394,9 @@ class MainViewModel : ViewModel() {
             return false
         }
 
+        // TVBox: 整体 base64 编码的直播源自动解码
+        string = decodeBase64IfNeeded(string).trim()
+
         if (initialized && string == cacheChannels) {
             Log.w(TAG, "same channels")
             return true
@@ -400,6 +405,40 @@ class MainViewModel : ViewModel() {
         val list: List<TV>
 
         when (string[0]) {
+            '{' -> {
+                // TVBox JSON 配置：{"lives":[{"name":"...","url":"http://xxx/live.txt"}]}
+                try {
+                    val obj = JsonParser.parseString(string).asJsonObject
+                    val lives = obj.getAsJsonArray("lives")
+                    if (lives == null || lives.size() == 0) {
+                        Log.w(TAG, "TVBox config has no lives")
+                        return false
+                    }
+                    var liveUrl = ""
+                    for (e in lives) {
+                        val live = e.asJsonObject
+                        val u = live.get("url")?.asString ?: continue
+                        if (u.isNotEmpty()) {
+                            liveUrl = u
+                            live.get("epg")?.asString?.let { epgUrl = it }
+                            break
+                        }
+                    }
+                    if (liveUrl.isEmpty()) {
+                        Log.w(TAG, "TVBox lives has no url")
+                        return false
+                    }
+                    Log.i(TAG, "TVBox live url $liveUrl")
+                    viewModelScope.launch {
+                        importFromUrl(liveUrl)
+                    }
+                    return true
+                } catch (e: Exception) {
+                    Log.e(TAG, "str2Channels tvbox", e)
+                    return false
+                }
+            }
+
             '[' -> {
                 try {
                     list = gson.fromJson(string, typeTvList)
@@ -457,11 +496,16 @@ class MainViewModel : ViewModel() {
                             }
                         }
                     } else if (!trimmedLine.startsWith("#")) {
+                        // TVBox m3u: 剥离 url$备注 后缀
+                        val uri = trimmedLine.substringBefore('$').trim()
+                        if (uri.isEmpty()) {
+                            continue
+                        }
                         tv.uris = if (tv.uris.isEmpty()) {
-                            listOf(trimmedLine)
+                            listOf(uri)
                         } else {
                             tv.uris.toMutableList().apply {
-                                this.add(trimmedLine)
+                                this.add(uri)
                             }
                         }
                     }
@@ -510,7 +554,11 @@ class MainViewModel : ViewModel() {
                             }
                             val arr = trimmedLine.split(',').map { it.trim() }
                             val title = arr.first().trim()
+                            // TVBox txt: 支持 url1#url2#url3 多线路，及 url$备注 后缀
                             val uris = arr.drop(1)
+                                .flatMap { it.split('#') }
+                                .map { it.substringBefore('$').trim() }
+                                .filter { it.isNotEmpty() }
 
                             val key = group + title
                             if (!tvMap.containsKey(key)) {
@@ -591,6 +639,33 @@ class MainViewModel : ViewModel() {
         }
 
         return true
+    }
+
+    /**
+     * TVBox 直播源常整体 base64 编码。若内容像 base64 且解码后为可读文本则返回解码结果。
+     */
+    private fun decodeBase64IfNeeded(str: String): String {
+        val s = str.trim()
+        if (s.isEmpty()) return str
+        // 已是明文格式则跳过
+        val c = s[0]
+        if (c == '#' || c == '[' || c == '{' || s.contains(",http") || s.contains("://")) {
+            return str
+        }
+        if (!Regex("^[A-Za-z0-9+/=\\r\\n]+$").matches(s)) {
+            return str
+        }
+        return try {
+            val decoded = Base64.decode(s, Base64.DEFAULT).toString(Charsets.UTF_8)
+            if (decoded.contains("://") || decoded.startsWith("#EXTM3U") || decoded.contains("#genre#")) {
+                Log.i(TAG, "base64 decoded channels")
+                decoded
+            } else {
+                str
+            }
+        } catch (e: Exception) {
+            str
+        }
     }
 
     companion object {
