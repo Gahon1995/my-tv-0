@@ -27,9 +27,8 @@ class ErrorFragment : Fragment() {
         layoutParams.topMargin = application.px2Px(binding.msg.marginTop)
         binding.msg.layoutParams = layoutParams
 
-        binding.msg.textSize = application.px2PxFont(binding.msg.textSize)
+        binding.msg.textSize = application.px2PxFontElder(binding.msg.textSize)
 
-        _binding = ErrorBinding.inflate(inflater, container, false)
         return binding.root
     }
 

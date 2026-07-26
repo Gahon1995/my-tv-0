@@ -51,8 +51,8 @@ class InfoFragment : Fragment() {
         layoutParamsDesc.topMargin = application.px2Px(binding.desc.marginTop)
         binding.desc.layoutParams = layoutParamsDesc
 
-        binding.title.textSize = application.px2PxFont(binding.title.textSize)
-        binding.desc.textSize = application.px2PxFont(binding.desc.textSize)
+        binding.title.textSize = application.px2PxFontElder(binding.title.textSize)
+        binding.desc.textSize = application.px2PxFontElder(binding.desc.textSize)
 
         binding.container.layoutParams.width = application.shouldWidthPx()
         binding.container.layoutParams.height = application.shouldHeightPx()

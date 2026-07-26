@@ -43,7 +43,7 @@ class GroupAdapter(
         layoutParams.bottomMargin = application.px2Px(binding.title.marginBottom)
         binding.title.layoutParams = layoutParams
 
-        binding.title.textSize = application.px2PxFont(binding.title.textSize)
+        binding.title.textSize = application.px2PxFontElder(binding.title.textSize)
 
         binding.root.isFocusable = true
         binding.root.isFocusableInTouchMode = true

@@ -60,6 +60,8 @@ object SP {
 
     private const val KEY_SOFT_DECODE = "soft_decode"
 
+    private const val KEY_ELDER_MODE = "elder_mode"
+
     const val DEFAULT_CHANNEL_REVERSAL = false
     const val DEFAULT_CHANNEL_NUM = false
     const val DEFAULT_TIME = true
@@ -74,6 +76,7 @@ object SP {
     const val DEFAULT_DISPLAY_SECONDS = true
     const val DEFAULT_LOG_TIMES = 10
     const val DEFAULT_SOFT_DECODE = false
+    const val DEFAULT_ELDER_MODE = false
 
     // 0 favorite; 1 all
     const val DEFAULT_POSITION_GROUP = 1
@@ -176,6 +179,10 @@ object SP {
     var softDecode: Boolean
         get() = sp.getBoolean(KEY_SOFT_DECODE, DEFAULT_SOFT_DECODE)
         set(value) = sp.edit().putBoolean(KEY_SOFT_DECODE, value).apply()
+
+    var elderMode: Boolean
+        get() = sp.getBoolean(KEY_ELDER_MODE, DEFAULT_ELDER_MODE)
+        set(value) = sp.edit().putBoolean(KEY_ELDER_MODE, value).apply()
 
     fun getLike(id: Int): Boolean {
         val stringSet = sp.getStringSet(KEY_LIKE, emptySet())

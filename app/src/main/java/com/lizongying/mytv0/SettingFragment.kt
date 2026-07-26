@@ -125,6 +125,14 @@ class SettingFragment : Fragment() {
             mainActivity.settingActive()
         }
 
+        val switchElderMode = _binding?.switchElderMode
+        switchElderMode?.isChecked = SP.elderMode
+        switchElderMode?.setOnCheckedChangeListener { _, isChecked ->
+            SP.elderMode = isChecked
+            R.string.restart_to_apply.showToast()
+            mainActivity.settingActive()
+        }
+
         binding.remoteSettings.setOnClickListener {
             val imageModalFragment = ModalFragment()
             val args = Bundle()
@@ -255,6 +263,7 @@ class SettingFragment : Fragment() {
             binding.switchCompactMenu,
             binding.switchDisplaySeconds,
             binding.switchSoftDecode,
+            binding.switchElderMode,
         )) {
             i.textSize = textSizeSwitch
             i.layoutParams = layoutParamsSwitch

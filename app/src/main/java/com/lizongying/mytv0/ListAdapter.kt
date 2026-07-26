@@ -37,16 +37,16 @@ class ListAdapter(
         val inflater = LayoutInflater.from(context)
         val binding = ListItemBinding.inflate(inflater, parent, false)
 
-        binding.icon.layoutParams.width = application.px2Px(binding.icon.layoutParams.width)
-        binding.icon.layoutParams.height = application.px2Px(binding.icon.layoutParams.height)
+        binding.icon.layoutParams.width = application.px2PxElder(binding.icon.layoutParams.width)
+        binding.icon.layoutParams.height = application.px2PxElder(binding.icon.layoutParams.height)
         binding.icon.setPadding(application.px2Px(binding.icon.paddingTop))
 
-        binding.title.layoutParams.width = application.px2Px(binding.title.layoutParams.width)
-        binding.title.layoutParams.height = application.px2Px(binding.title.layoutParams.height)
-        binding.title.textSize = application.px2PxFont(binding.title.textSize)
+        binding.title.layoutParams.width = application.px2PxElder(binding.title.layoutParams.width)
+        binding.title.layoutParams.height = application.px2PxElder(binding.title.layoutParams.height)
+        binding.title.textSize = application.px2PxFontElder(binding.title.textSize)
 
-        binding.heart.layoutParams.width = application.px2Px(binding.heart.layoutParams.width)
-        binding.heart.layoutParams.height = application.px2Px(binding.heart.layoutParams.height)
+        binding.heart.layoutParams.width = application.px2PxElder(binding.heart.layoutParams.width)
+        binding.heart.layoutParams.height = application.px2PxElder(binding.heart.layoutParams.height)
         binding.heart.setPadding(application.px2Px(binding.heart.paddingTop))
 
         return ViewHolder(context, binding)

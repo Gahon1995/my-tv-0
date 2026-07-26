@@ -43,8 +43,8 @@ class ChannelFragment : Fragment() {
         layoutParams.marginEnd = application.px2Px(binding.channel.marginEnd)
         binding.channel.layoutParams = layoutParams
 
-        binding.content.textSize = application.px2PxFont(binding.content.textSize)
-        binding.time.textSize = application.px2PxFont(binding.time.textSize)
+        binding.content.textSize = application.px2PxFontElder(binding.content.textSize)
+        binding.time.textSize = application.px2PxFontElder(binding.time.textSize)
 
         binding.main.layoutParams.width = application.shouldWidthPx()
         binding.main.layoutParams.height = application.shouldHeightPx()

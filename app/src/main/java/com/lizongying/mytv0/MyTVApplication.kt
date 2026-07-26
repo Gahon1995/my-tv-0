@@ -103,6 +103,21 @@ class MyTVApplication : Application() {
         return (px * ratio / scale).toFloat()
     }
 
+    // 大字模式缩放系数（老人观看）
+    fun elderScale(): Float {
+        return if (SP.elderMode) 1.4f else 1.0f
+    }
+
+    // 频道列表/信息条等观看相关文字用此方法，跟随大字模式放大
+    fun px2PxFontElder(px: Float): Float {
+        return px2PxFont(px) * elderScale()
+    }
+
+    // 行高等尺寸随大字模式放大
+    fun px2PxElder(px: Int): Int {
+        return (px2Px(px) * elderScale()).toInt()
+    }
+
     fun sp2Px(sp: Float): Float {
         return (sp * ratio * scale).toFloat()
     }
