@@ -4,32 +4,51 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/sources"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    >
-        <androidx.appcompat.widget.AppCompatTextView
-            android:id="@+id/content"
-            android:layout_width="600dp"
-            android:layout_height="400dp"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:textColor="@color/blur"
-            android:textStyle="normal"
-            android:textSize="14sp"
-            tools:text="暂无视频源"
-            android:visibility="gone"
-            android:text="@string/no_video_source"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            />
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/list"
-            android:layout_width="600dp"
-            android:layout_height="400dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            >
-        </androidx.recyclerview.widget.RecyclerView>
+    android:layout_height="wrap_content">
 
+    <com.lizongying.mytv0.view.GlassPanelLayout
+        android:id="@+id/sources_panel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:glassRadius="20dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/sources_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="6dp"
+                android:paddingBottom="8dp"
+                android:textColor="@color/text_tertiary"
+                android:text="@string/sources_title"
+                android:textSize="14sp" />
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/content"
+                android:layout_width="600dp"
+                android:layout_height="400dp"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:textColor="@color/text_tertiary"
+                android:textStyle="normal"
+                android:textSize="14sp"
+                tools:text="暂无视频源"
+                android:visibility="gone"
+                android:text="@string/no_video_source" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/list"
+                android:layout_width="600dp"
+                android:layout_height="400dp"
+                android:clipToPadding="false" />
+        </LinearLayout>
+    </com.lizongying.mytv0.view.GlassPanelLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

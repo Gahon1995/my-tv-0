@@ -141,12 +141,11 @@ class SourcesAdapter(
         }
 
         fun focus(hasFocus: Boolean) {
+            com.lizongying.mytv0.view.FocusFx.apply(binding.root, hasFocus)
             if (hasFocus) {
-                binding.title.setTextColor(ContextCompat.getColor(context, R.color.white))
-                binding.root.setBackgroundResource(R.color.focus)
+                binding.title.setTextColor(ContextCompat.getColor(context, R.color.text_primary))
             } else {
-                binding.title.setTextColor(ContextCompat.getColor(context, R.color.title_blur))
-                binding.root.setBackgroundResource(R.color.blur)
+                binding.title.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
             }
         }
 

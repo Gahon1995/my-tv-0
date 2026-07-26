@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.lizongying.mytv0.data.EPG
 import com.lizongying.mytv0.databinding.ProgramBinding
+import com.lizongying.mytv0.view.FocusFx
 
 class ProgramFragment : Fragment(), ProgramAdapter.ItemListener {
     private var _binding: ProgramBinding? = null
@@ -57,12 +58,29 @@ class ProgramFragment : Fragment(), ProgramAdapter.ItemListener {
         val context = requireActivity()
 
         viewModel.groupModel.getCurrent()?.let {
+            // 频道头
+            val tv = it.tv
+            val application = context.applicationContext as MyTVApplication
+            val channelNum = if (tv.number == -1) tv.id.plus(1) else tv.number
+            val bitmap = PlaceholderLogo.get(context, channelNum)
+            val name = tv.name.ifEmpty { tv.title }
+            application.imageHelper.loadImage(name, binding.headerLogo, bitmap, tv.logo)
+            binding.headerTitle.text = tv.title
+            binding.headerSubtitle.text = if (it.supportsCatchup()) {
+                R.string.program_subtitle_catchup.getString()
+            } else {
+                R.string.program_subtitle.getString()
+            }
+
+            FocusFx.panelIn(binding.programPanel)
+
             val index = it.epgValue.indexOfFirst { it.endTime > Utils.getDateTimestamp() }
             programAdapter = ProgramAdapter(
                 context,
                 binding.list,
                 it.epgValue,
                 index,
+                it.supportsCatchup(),
             )
             binding.list.adapter = programAdapter
             binding.list.layoutManager = LinearLayoutManager(context)

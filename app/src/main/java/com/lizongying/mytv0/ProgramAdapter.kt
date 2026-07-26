@@ -17,6 +17,7 @@ class ProgramAdapter(
     private val recyclerView: RecyclerView,
     private var epgList: List<EPG>,
     private var index: Int,
+    private val supportsCatchup: Boolean = false,
 ) :
     RecyclerView.Adapter<ProgramAdapter.ViewHolder>() {
 
@@ -107,6 +108,7 @@ class ProgramAdapter(
         }
 
         viewHolder.bindTitle(epg)
+        viewHolder.bindBadge(epg, supportsCatchup)
     }
 
     override fun getItemCount() = epgList.size
@@ -124,20 +126,55 @@ class ProgramAdapter(
             binding.description.text = epg.title
         }
 
+        /** 徽标：直播中 / 可回看 / 无 */
+        fun bindBadge(epg: EPG, supportsCatchup: Boolean) {
+            val now = Utils.getDateTimestamp()
+            when {
+                epg.beginTime <= now && epg.endTime > now -> {
+                    binding.badge.text = context.getString(R.string.badge_live)
+                    binding.badge.setBackgroundResource(R.drawable.bg_badge_live)
+                    binding.badge.setTextColor(
+                        ContextCompat.getColor(context, R.color.badge_live)
+                    )
+                    binding.badge.visibility = android.view.View.VISIBLE
+                }
+
+                epg.endTime <= now && supportsCatchup -> {
+                    binding.badge.text = context.getString(R.string.badge_catchup)
+                    binding.badge.setBackgroundResource(R.drawable.bg_badge_catchup)
+                    binding.badge.setTextColor(
+                        ContextCompat.getColor(context, R.color.badge_catchup)
+                    )
+                    binding.badge.visibility = android.view.View.VISIBLE
+                }
+
+                else -> binding.badge.visibility = android.view.View.GONE
+            }
+        }
+
         fun focus(hasFocus: Boolean, isCurrent: Boolean) {
+            com.lizongying.mytv0.view.FocusFx.apply(binding.root, hasFocus)
             if (hasFocus) {
-                val color = ContextCompat.getColor(context, R.color.focus)
-                binding.title.setTextColor(color)
-                binding.description.setTextColor(color)
+                binding.title.setTextColor(
+                    ContextCompat.getColor(context, R.color.text_secondary)
+                )
+                binding.description.setTextColor(
+                    ContextCompat.getColor(context, R.color.text_primary)
+                )
             } else {
                 if (isCurrent) {
-                    val color = ContextCompat.getColor(context, R.color.white)
-                    binding.title.setTextColor(color)
+                    val color = ContextCompat.getColor(context, R.color.text_primary)
+                    binding.title.setTextColor(
+                        ContextCompat.getColor(context, R.color.text_tertiary)
+                    )
                     binding.description.setTextColor(color)
                 } else {
-                    val color = ContextCompat.getColor(context, R.color.description_blur)
-                    binding.title.setTextColor(color)
-                    binding.description.setTextColor(color)
+                    binding.title.setTextColor(
+                        ContextCompat.getColor(context, R.color.text_dim)
+                    )
+                    binding.description.setTextColor(
+                        ContextCompat.getColor(context, R.color.text_tertiary)
+                    )
                 }
             }
         }
