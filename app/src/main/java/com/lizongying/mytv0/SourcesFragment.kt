@@ -99,6 +99,8 @@ class SourcesFragment : DialogFragment(), SourcesAdapter.ItemListener {
         viewModel.sources.getSource(position)?.let {
             val uri = Uri.parse(it.uri)
             handler.post {
+                // 用户主动切换直播源 → 本地覆盖优先，远端配置不再改写
+                SP.userOverrideConfig = true
                 viewModel.importFromUri(uri)
             }
         }

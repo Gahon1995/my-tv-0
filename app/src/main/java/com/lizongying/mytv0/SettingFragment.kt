@@ -55,6 +55,7 @@ class SettingFragment : Fragment() {
 
         // ===== ① 直播源 =====
         binding.configUrlText.text = SP.configUrl ?: ""
+        syncRemoteServerText()
 
         binding.confirmConfig.setOnClickListener {
             val sourcesFragment = SourcesFragment()
@@ -296,8 +297,15 @@ class SettingFragment : Fragment() {
             SP.epg = SP.DEFAULT_EPG
             viewModel.updateEPG()
 
+            // 清除用户覆盖标记，重新拉取并应用远端配置（远端 > 内置默认）
+            // 注意：远程配置中心地址本身保留，不随恢复默认清除
+            SP.clearUserOverrides()
+            SP.logoBaseUrl = ""
+            viewModel.updateConfig()
+
             // 同步界面开关状态
             syncSwitchStates()
+            syncRemoteServerText()
 
             R.string.config_restored.showToast()
         }
@@ -314,6 +322,12 @@ class SettingFragment : Fragment() {
         }
 
         binding.navSource.requestFocus()
+    }
+
+    private fun syncRemoteServerText() {
+        val server = SP.remoteConfigServer ?: ""
+        binding.remoteConfigServerText.text =
+            server.ifEmpty { getString(R.string.remote_config_server_hint) }
     }
 
     /** 恢复默认后刷新所有开关显示 */
@@ -373,6 +387,7 @@ class SettingFragment : Fragment() {
         super.onHiddenChanged(hidden)
         if (_binding != null && !hidden) {
             binding.configUrlText.text = SP.configUrl ?: ""
+            syncRemoteServerText()
             FocusFx.panelIn(binding.settingPanel)
             binding.navSource.requestFocus()
         }

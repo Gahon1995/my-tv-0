@@ -78,6 +78,25 @@ class Sources {
         }
     }
 
+    /**
+     * 合并远端下发的源列表：仅追加缺失的 uri，不改变当前选中项。
+     * 用户手动添加的源保留在列表中。
+     */
+    fun mergeRemoteSources(uris: List<String>) {
+        val missing = uris.filter { uri -> sourcesValue.none { it.uri == uri } }
+        if (missing.isEmpty()) {
+            return
+        }
+
+        _sources.value = sourcesValue.toMutableList().apply {
+            addAll(missing.map { Source(uri = it) })
+        }
+        SP.sources = gson.toJson(sourcesValue, typeSourceList) ?: ""
+
+        _changed.value = version
+        version++
+    }
+
     fun removeSource(id: String): Boolean {
         if (sourcesValue.isEmpty()) {
             Log.i(TAG, "sources is empty")

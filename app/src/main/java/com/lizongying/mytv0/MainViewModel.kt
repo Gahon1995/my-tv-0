@@ -12,6 +12,7 @@ import com.google.gson.JsonSyntaxException
 import com.lizongying.mytv0.ImageHelper
 import com.lizongying.mytv0.MyTVApplication
 import com.lizongying.mytv0.R
+import com.lizongying.mytv0.RemoteConfigManager
 import com.lizongying.mytv0.SP
 import com.lizongying.mytv0.Utils.getDateFormat
 import com.lizongying.mytv0.Utils.getUrls
@@ -86,10 +87,14 @@ class MainViewModel : ViewModel() {
     }
 
     fun updateConfig() {
-        if (SP.configAutoLoad) {
-            SP.configUrl?.let {
-                if (it.startsWith("http")) {
-                    viewModelScope.launch {
+        viewModelScope.launch {
+            // 先拉取并应用远端配置中心（未配置服务器时为空操作），
+            // 使远端下发的直播源/EPG 在本次自动更新中即时生效
+            RemoteConfigManager.fetchAndApply(this@MainViewModel)
+
+            if (SP.configAutoLoad) {
+                SP.configUrl?.let {
+                    if (it.startsWith("http")) {
                         Log.i(TAG, "update config url: $it")
                         importFromUrl(it)
                         updateEPG()
@@ -110,6 +115,8 @@ class MainViewModel : ViewModel() {
     fun init(context: Context) {
         val application = context.applicationContext as MyTVApplication
         imageHelper = application.imageHelper
+
+        RemoteConfigManager.init(context.applicationContext)
 
         groupModel.addTVListModel(TVListModel("我的收藏", 0))
         groupModel.addTVListModel(TVListModel("全部頻道", 1))
@@ -175,10 +182,13 @@ class MainViewModel : ViewModel() {
                 continue
             }
             val url = tvModel.tv.logo
+            // 远端配置的台标基础地址优先，内置地址兜底
+            val logoBase = SP.logoBaseUrl?.trim()?.trimEnd('/') ?: ""
             var urls =
-                listOf(
-                    "https://live.fanmingming.cn/tv/$name.png"
-                ) + getUrls("https://raw.githubusercontent.com/fanmingming/live/main/tv/$name.png")
+                (if (logoBase.isNotEmpty()) getUrls("$logoBase/$name.png") else emptyList()) +
+                        listOf(
+                            "https://live.fanmingming.cn/tv/$name.png"
+                        ) + getUrls("https://raw.githubusercontent.com/fanmingming/live/main/tv/$name.png")
             if (url.isNotEmpty()) {
                 urls = (getUrls(url) + urls).distinct()
             }

@@ -79,4 +79,8 @@
     <string name="auto_retry_hint">Auto retry in 30s</string>
     <string name="config_address">Live source URL</string>
     <string name="epg_empty">No program guide</string>
+    <string name="remote_config_server">Remote config server</string>
+    <string name="remote_config_server_hint">Not set. Configure via the remote configuration page.</string>
+    <string name="remote_server_set_success">Remote config server set successfully</string>
+    <string name="remote_server_set_failure">Failed to set remote config server</string>
 </resources>
