@@ -561,7 +561,8 @@ class MainViewModel : ViewModel() {
                 val l = mutableListOf<TV>()
                 val tvMap = mutableMapOf<String, List<String>>()
                 for (line in lines) {
-                    val trimmedLine = line.trim()
+                    // 容错：全角逗号/冒号统一为半角
+                    val trimmedLine = line.trim().replace('，', ',').replace('：', ':')
                     if (trimmedLine.isNotEmpty()) {
                         if (trimmedLine.contains("#genre#")) {
                             group = trimmedLine.split(',', limit = 2)[0].trim()
@@ -571,6 +572,9 @@ class MainViewModel : ViewModel() {
                             }
                             val arr = trimmedLine.split(',').map { it.trim() }
                             val title = arr.first().trim()
+                            if (title.isEmpty()) {
+                                continue
+                            }
                             // TVBox txt: 支持 url1#url2#url3 多线路，及 url$备注 后缀
                             val uris = arr.drop(1)
                                 .flatMap { it.split('#') }
