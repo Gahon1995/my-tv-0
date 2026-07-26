@@ -73,7 +73,7 @@ class UpdateManager(
                 release = getRelease()
                 Log.i(TAG, "versionCode $versionCode ${release?.version_code}")
                 if (release?.version_code != null) {
-                    if (release?.version_code!! >= versionCode) {
+                    if (release?.version_code!! > versionCode) {
                         text = "最新版本：${release?.version_name}"
                         update = true
                     } else {
@@ -237,7 +237,16 @@ class UpdateManager(
             Log.i(TAG, "apkFile $apkFile")
 
             if (apkFile.exists()) {
-                val apkUri = Uri.parse("file://$apkFile")
+                // Android 7.0+ 禁止 file:// URI 跨应用传递，必须用 FileProvider
+                val apkUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    androidx.core.content.FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.FileProvider",
+                        apkFile
+                    )
+                } else {
+                    Uri.parse("file://$apkFile")
+                }
                 Log.i(TAG, "apkUri $apkUri")
                 val installIntent = Intent(Intent.ACTION_VIEW).apply {
                     setDataAndType(apkUri, "application/vnd.android.package-archive")
@@ -255,7 +264,7 @@ class UpdateManager(
         private const val TAG = "UpdateManager"
         private const val BUFFER_SIZE = 8192
         private const val VERSION_URL =
-            "https://raw.githubusercontent.com/lizongying/my-tv-0/main/version.json"
+            "https://raw.githubusercontent.com/Gahon1995/my-tv-0/main/version.json"
     }
 
     override fun onConfirm() {
