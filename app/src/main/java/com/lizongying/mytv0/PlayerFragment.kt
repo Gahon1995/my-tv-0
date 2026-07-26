@@ -132,6 +132,7 @@ class PlayerFragment : Fragment() {
                     tv.confirmVideoIndex()
                     tv.setErrInfo("")
                     tv.retryTimes = 0
+                    handler.removeCallbacks(autoRecoverRunnable)
                 } else {
                     Log.i(TAG, "${tv.tv.title} 播放停止")
                 }
@@ -189,7 +190,12 @@ class PlayerFragment : Fragment() {
                         tv.setReady(true)
                         tv.retryTimes = 0
                     } else {
-                        tv.setErrInfo(R.string.play_error.getString())
+                        // 永不黑屏：不停留在错误页等人工处理，
+                        // 显示友好提示并在 30s 后自动从第一条线路重新尝试
+                        tv.setErrInfo(R.string.play_error_retry.getString())
+                        tv.retryTimes = 0
+                        handler.removeCallbacks(autoRecoverRunnable)
+                        handler.postDelayed(autoRecoverRunnable, AUTO_RECOVER_DELAY)
                     }
                 }
             }
@@ -203,8 +209,9 @@ class PlayerFragment : Fragment() {
 
     @OptIn(UnstableApi::class)
     fun play(tvModel: TVModel) {
-        // 换台时取消上一个频道的重试任务，避免误触发
+        // 换台时取消上一个频道的重试/自动恢复任务，避免误触发
         handler.removeCallbacks(retryRunnable)
+        handler.removeCallbacks(autoRecoverRunnable)
         this.tvModel = tvModel
         player?.run {
             tvModel.getVideoUrl() ?: return
@@ -301,9 +308,20 @@ class PlayerFragment : Fragment() {
         tvModel?.setReady(true)
     }
 
+    // 全部线路重试耗尽后的自动恢复：回到第一条线路重新走完整重试流程
+    private val autoRecoverRunnable = Runnable {
+        tvModel?.let {
+            Log.i(TAG, "auto recover ${it.tv.title}")
+            it.setReady()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         if (player?.isPlaying == false) {
+            // 待机唤醒/切回前台：直播流挂起久了 position 已失效，
+            // 直接回直播点重新起播，失败则走完整重试流程
+            player?.seekToDefaultPosition()
             player?.prepare()
             player?.play()
         }
@@ -319,6 +337,7 @@ class PlayerFragment : Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacks(retryRunnable)
+        handler.removeCallbacks(autoRecoverRunnable)
         player?.release()
     }
 
@@ -329,5 +348,6 @@ class PlayerFragment : Fragment() {
 
     companion object {
         private const val TAG = "PlayerFragment"
+        private const val AUTO_RECOVER_DELAY = 30 * 1000L
     }
 }

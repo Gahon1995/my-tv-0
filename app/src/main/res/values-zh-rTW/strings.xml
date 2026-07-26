@@ -24,7 +24,11 @@
     <string name="channel_format_error">頻道格式錯誤</string>
     <string name="channel_read_error">無法讀取頻道</string>
     <string name="channel_request_error">頻道請求錯誤</string>
-    <string name="play_error">播放錯誤</string>
+    <string name="play_error">信號中斷，正在自動恢復…</string>
+    <string name="play_error_retry">信號中斷，正在自動恢復，請稍候…</string>
+    <string name="network_recovered">網絡已恢復</string>
+    <string name="elder_mode">大字模式</string>
+    <string name="restart_to_apply">重啟應用後生效</string>
     <string name="file_not_exist">文件不存在</string>
     <string name="channel_not_exist">頻道為空</string>
     <string name="config_restored">已恢復到默認配置</string>

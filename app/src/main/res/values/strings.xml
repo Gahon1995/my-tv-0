@@ -25,6 +25,10 @@
     <string name="channel_read_error">Unable to read channel</string>
     <string name="channel_request_error">Channel request error</string>
     <string name="play_error">Play error</string>
+    <string name="play_error_retry">Signal lost, retrying automatically…</string>
+    <string name="network_recovered">Network recovered</string>
+    <string name="elder_mode">Big Font Mode</string>
+    <string name="restart_to_apply">Restart app to apply</string>
     <string name="file_not_exist">File does not exist</string>
     <string name="channel_not_exist">Channel does not exist</string>
     <string name="config_restored">Configuration restored to default</string>
