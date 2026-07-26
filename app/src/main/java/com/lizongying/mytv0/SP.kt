@@ -100,10 +100,13 @@ object SP {
             .use {
                 val str = it.readText()
                 if (str.isNotEmpty()) {
+                    // 兼容明文与卦象编码两种格式
+                    val g = Gua()
+                    val text = if (g.verify(str)) g.decode(str) else str
                     DEFAULT_SOURCES = gson.toJson(
-                        Gua().decode(str).trim().split("\n").map { i ->
+                        text.trim().split("\n").map { i ->
                             Source(
-                                uri = i
+                                uri = i.trim()
                             )
                         }, typeSourceList
                     ) ?: ""

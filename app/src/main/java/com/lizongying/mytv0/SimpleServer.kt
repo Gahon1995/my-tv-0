@@ -130,13 +130,15 @@ class SimpleServer(private val context: Context, private val viewModel: MainView
 
     private fun handleSources(): Response {
         val response = runBlocking(Dispatchers.IO) {
-            fetchSources("https://raw.githubusercontent.com/lizongying/my-tv-0/main/app/src/main/res/raw/sources.txt")
+            fetchSources("https://raw.githubusercontent.com/Gahon1995/my-tv-0/main/app/src/main/res/raw/sources.txt")
         }
 
+        // 兼容明文与卦象编码两种格式
+        val g = Gua()
         return newFixedLengthResponse(
             Response.Status.OK,
             "application/json",
-            Gua().decode(response)
+            if (g.verify(response)) g.decode(response) else response
         )
     }
 
