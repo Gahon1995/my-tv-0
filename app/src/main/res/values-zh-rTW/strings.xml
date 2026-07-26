@@ -60,4 +60,20 @@
     <string name="no_video_source">暫無視頻源</string>
     <string name="soft_decode">軟解</string>
     <string name="epg_is_empty">節目單為空</string>
+    <string name="glass_effect">玻璃特效</string>
+    <string name="glass_effect_desc">毛玻璃面板與焦點動效</string>
+    <string name="elder_mode_desc">文字放大 1.4 倍，重啟後生效</string>
+    <string name="setting_nav_source">直播源</string>
+    <string name="setting_nav_play">播放設置</string>
+    <string name="setting_nav_display">界面外觀</string>
+    <string name="setting_nav_about">更新與關於</string>
+    <string name="badge_live">直播中</string>
+    <string name="badge_catchup">可回看</string>
+    <string name="now_playing">正在播出：</string>
+    <string name="up_next">接下來：</string>
+    <string name="program_subtitle">節目單</string>
+    <string name="program_subtitle_catchup">節目單 · 支持回看</string>
+    <string name="sources_title">線路切換</string>
+    <string name="auto_retry_hint">30 秒後自動重試</string>
+    <string name="config_address">直播源地址</string>
 </resources>

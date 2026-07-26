@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="GlassPanelLayout">
+        <!-- 圆角半径，默认 24dp；胶囊用大值 -->
+        <attr name="glassRadius" format="dimension" />
+        <!-- 玻璃渐变+描边覆盖层 drawable，默认 bg_glass_panel -->
+        <attr name="glassOverlay" format="reference" />
+    </declare-styleable>
+</resources>

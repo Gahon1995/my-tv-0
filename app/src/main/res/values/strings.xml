@@ -62,4 +62,20 @@
     <string name="no_video_source">No Video Source</string>
     <string name="soft_decode">Soft Decode</string>
     <string name="epg_is_empty">EPG is empty</string>
+    <string name="glass_effect">Glass Effect</string>
+    <string name="glass_effect_desc">Frosted glass panels and focus animations</string>
+    <string name="elder_mode_desc">Enlarge text by 1.4x, restart to apply</string>
+    <string name="setting_nav_source">Live Source</string>
+    <string name="setting_nav_play">Playback</string>
+    <string name="setting_nav_display">Display</string>
+    <string name="setting_nav_about">About</string>
+    <string name="badge_live">LIVE</string>
+    <string name="badge_catchup">Replay</string>
+    <string name="now_playing">Now:</string>
+    <string name="up_next">Next:</string>
+    <string name="program_subtitle">Program Guide</string>
+    <string name="program_subtitle_catchup">Program Guide · Replay Supported</string>
+    <string name="sources_title">Switch Line</string>
+    <string name="auto_retry_hint">Auto retry in 30s</string>
+    <string name="config_address">Live source URL</string>
 </resources>

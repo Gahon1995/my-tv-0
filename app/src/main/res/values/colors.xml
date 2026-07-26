@@ -1,13 +1,44 @@
 <resources>
-    <color name="focus">#0096A6</color>
-    <color name="blur">#FF263238</color>
+    <!-- ===== 焦点主色：青蓝 ===== -->
+    <color name="accent">#5AC8FA</color>
+    <color name="accent_deep">#0A84FF</color>
+    <color name="accent_glow">#735AC8FA</color>
+    <color name="focus_border">#E678D2FF</color>
+    <color name="focus_bg_start">#595AC8FA</color>
+    <color name="focus_bg_end">#470A84FF</color>
+
+    <!-- ===== 玻璃面板 ===== -->
+    <color name="glass_hi">#24FFFFFF</color>
+    <color name="glass_mid">#0DFFFFFF</color>
+    <color name="glass_lo">#8C141923</color>
+    <color name="glass_border">#38FFFFFF</color>
+    <color name="glass_inner_item">#29FFFFFF</color>
+    <color name="glass_track">#33FFFFFF</color>
+    <color name="glass_input">#4D000000</color>
+
+    <!-- ===== 文字 ===== -->
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#D9FFFFFF</color>
+    <color name="text_tertiary">#A6FFFFFF</color>
+    <color name="text_dim">#73FFFFFF</color>
+
+    <!-- ===== 状态 ===== -->
+    <color name="badge_live">#30D158</color>
+    <color name="badge_live_bg">#3330D158</color>
+    <color name="badge_catchup">#7AD0FF</color>
+    <color name="badge_catchup_bg">#2E7AD0FF</color>
+    <color name="heart_on">#FF5F7A</color>
+
+    <!-- ===== 兼容旧色名（指向新体系） ===== -->
+    <color name="focus">#0A84FF</color>
+    <color name="blur">#8C141923</color>
     <color name="black">#000</color>
     <color name="white">#FFF</color>
     <color name="red">#F00</color>
-    <color name="title_blur">#FFEEEEEE</color>
-    <color name="description_blur">#B3EEEEEE</color>
-    <color name="track_checked">#400096A6</color>
-    <color name="track_unchecked">#B3EEEEEE</color>
-    <color name="thumb_checked">#0096A6</color>
+    <color name="title_blur">#D9FFFFFF</color>
+    <color name="description_blur">#A6FFFFFF</color>
+    <color name="track_checked">#595AC8FA</color>
+    <color name="track_unchecked">#33FFFFFF</color>
+    <color name="thumb_checked">#5AC8FA</color>
     <color name="thumb_unchecked">#FFEEEEEE</color>
 </resources>
