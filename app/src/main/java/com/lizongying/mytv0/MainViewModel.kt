@@ -424,20 +424,27 @@ class MainViewModel : ViewModel() {
                         return false
                     }
                     var liveUrl = ""
+                    val extraUrls = mutableListOf<String>()
                     for (e in lives) {
                         val live = e.asJsonObject
                         val u = live.get("url")?.asString ?: continue
-                        if (u.isNotEmpty()) {
+                        if (u.isEmpty()) continue
+                        if (liveUrl.isEmpty()) {
                             liveUrl = u
                             live.get("epg")?.asString?.let { epgUrl = it }
-                            break
+                        } else {
+                            extraUrls.add(u)
                         }
                     }
                     if (liveUrl.isEmpty()) {
                         Log.w(TAG, "TVBox lives has no url")
                         return false
                     }
-                    Log.i(TAG, "TVBox live url $liveUrl")
+                    Log.i(TAG, "TVBox live url $liveUrl, extra ${extraUrls.size}")
+                    // 其余 lives 也加入源列表，便于在源管理中切换
+                    for (u in extraUrls.reversed()) {
+                        sources.addSource(Source(uri = u))
+                    }
                     redirectingToLiveUrl = true
                     viewModelScope.launch {
                         importFromUrl(liveUrl)
