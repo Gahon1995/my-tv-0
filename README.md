@@ -65,6 +65,8 @@
 * 設置中的「恢復默認」會清除本地修改，重新應用遠端配置
 * 配置中心不可達時自動使用上次緩存或內置默認值，不影響使用
 
+開發者向的實現說明見 [docs/remote-config.md](./docs/remote-config.md)
+
 下載安裝 [releases](https://github.com/lizongying/my-tv-0/releases/)
 
 注意，“*-kitkat”為安卓4.4兼容版本
