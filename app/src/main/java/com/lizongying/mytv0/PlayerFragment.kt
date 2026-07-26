@@ -101,10 +101,11 @@ class PlayerFragment : Fragment() {
             return
         }
         val title = if (tv.catchupTitle.isEmpty()) tv.tv.title else tv.catchupTitle
-        binding.seekTitle.text = "${R.string.catchup_playing.getString()} · $title  (${
+        binding.seekTitle.text = "$title  (${
             Utils.getDateFormat("HH:mm", tv.catchupBegin.toInt())
         }-${Utils.getDateFormat("HH:mm", tv.catchupEnd.toInt())})"
         binding.seekOverlay.visibility = View.VISIBLE
+        com.lizongying.mytv0.view.FocusFx.panelIn(binding.seekOverlay)
         handler.removeCallbacks(updateSeekRunnable)
         handler.post(updateSeekRunnable)
         scheduleHideSeek()
@@ -432,8 +433,7 @@ class PlayerFragment : Fragment() {
     }
 
     fun showVolume(visibility: Int) {
-        binding.icon.visibility = visibility
-        binding.volume.visibility = visibility
+        binding.volumePill.visibility = visibility
         hideVolume()
     }
 
@@ -444,6 +444,12 @@ class PlayerFragment : Fragment() {
     fun setVolume(progress: Int, volume: Boolean = false) {
         val context = requireContext()
         binding.volume.progress = progress
+        val max = binding.volume.max
+        binding.volumeNum.text = if (max > 0) {
+            (progress * 100 / max).toString()
+        } else {
+            progress.toString()
+        }
         binding.icon.setImageDrawable(
             ContextCompat.getDrawable(
                 context,
@@ -467,8 +473,7 @@ class PlayerFragment : Fragment() {
     }
 
     private val hideVolumeRunnable = Runnable {
-        binding.icon.visibility = View.GONE
-        binding.volume.visibility = View.GONE
+        binding.volumePill.visibility = View.GONE
     }
 
     private val retryRunnable = Runnable {
