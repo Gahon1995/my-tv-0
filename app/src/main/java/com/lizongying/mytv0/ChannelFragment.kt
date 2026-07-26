@@ -75,7 +75,7 @@ class ChannelFragment : Fragment() {
 
     fun show(channel: Int) {
         Log.i(TAG, "input $channel ${this.channel}")
-        val tv = viewModel.groupModel.getCurrent()!!.tv
+        val tv = viewModel.groupModel.getCurrent()?.tv ?: return
         if (tv.id > 10 && tv.id == this.channel - 1) {
             this.channel = 0
             channelCount = 0
@@ -98,7 +98,9 @@ class ChannelFragment : Fragment() {
     }
 
     fun playNow() {
-        handler.postDelayed(playRunnable, 0)
+        // 先移除已排队的延时播放，避免二次触发（会导致"频道不存在"误提示）
+        handler.removeCallbacks(playRunnable)
+        handler.post(playRunnable)
     }
 
     override fun onResume() {
@@ -129,6 +131,7 @@ class ChannelFragment : Fragment() {
     }
 
     private val playRunnable = Runnable {
+        handler.removeCallbacks(playRunnable)
         var c = channel - 1
         viewModel.listModel.find { it.tv.number == channel }?.let {
             c = it.tv.id
