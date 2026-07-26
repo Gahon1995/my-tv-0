@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.lizongying.mytv0.databinding.GroupItemBinding
 import com.lizongying.mytv0.models.TVGroupModel
 import com.lizongying.mytv0.models.TVListModel
+import com.lizongying.mytv0.view.FocusFx
 
 
 class GroupAdapter(
@@ -78,7 +79,7 @@ class GroupAdapter(
             listener?.onItemFocusChange(listTVModel, hasFocus)
 
             if (hasFocus) {
-                viewHolder.focus(true)
+                viewHolder.focus(true, isCurrent(position))
                 focused = view
 
                 val p = listTVModel.getGroupIndex()
@@ -99,7 +100,7 @@ class GroupAdapter(
 //                    visible = true
 //                }
             } else {
-                viewHolder.focus(false)
+                viewHolder.focus(false, isCurrent(position))
             }
         }
 
@@ -161,6 +162,17 @@ class GroupAdapter(
         }
 
         viewHolder.bindTitle(listTVModel.getName())
+        viewHolder.focus(view.hasFocus(), isCurrent(position))
+    }
+
+    /** 该分组是否为当前所选分组（用于非焦点态高亮） */
+    private fun isCurrent(position: Int): Boolean {
+        val groupPosition = if (SP.showAllChannels || tvGroupModel.positionValue == 0) {
+            tvGroupModel.positionValue
+        } else {
+            tvGroupModel.positionValue - 1
+        }
+        return position == groupPosition
     }
 
     override fun getItemCount() = tvGroupModel.size()
@@ -175,17 +187,24 @@ class GroupAdapter(
             }
         }
 
-        fun focus(hasFocus: Boolean) {
+        fun focus(hasFocus: Boolean, isCurrent: Boolean = false) {
+            FocusFx.apply(binding.root, hasFocus)
             if (hasFocus) {
-                binding.title.setTextColor(ContextCompat.getColor(context, R.color.focus))
+                // selector 已处理焦点背景
+                binding.title.setTextColor(ContextCompat.getColor(context, R.color.text_primary))
+            } else if (isCurrent) {
+                binding.title.setBackgroundResource(R.drawable.bg_group_active)
+                binding.title.setTextColor(ContextCompat.getColor(context, R.color.text_primary))
+                return
             } else {
                 binding.title.setTextColor(
                     ContextCompat.getColor(
                         context,
-                        R.color.title_blur
+                        R.color.text_tertiary
                     )
                 )
             }
+            binding.title.setBackgroundResource(R.drawable.bg_item_selector)
         }
     }
 

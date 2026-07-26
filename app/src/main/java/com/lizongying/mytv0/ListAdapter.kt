@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.lizongying.mytv0.databinding.ListItemBinding
 import com.lizongying.mytv0.models.TVListModel
 import com.lizongying.mytv0.models.TVModel
+import com.lizongying.mytv0.view.FocusFx
 
 
 class ListAdapter(
@@ -41,9 +42,9 @@ class ListAdapter(
         binding.icon.layoutParams.height = application.px2PxElder(binding.icon.layoutParams.height)
         binding.icon.setPadding(application.px2Px(binding.icon.paddingTop))
 
-        binding.title.layoutParams.width = application.px2PxElder(binding.title.layoutParams.width)
-        binding.title.layoutParams.height = application.px2PxElder(binding.title.layoutParams.height)
         binding.title.textSize = application.px2PxFontElder(binding.title.textSize)
+        binding.epgNow.textSize = application.px2PxFontElder(binding.epgNow.textSize)
+        binding.num.textSize = application.px2PxFontElder(binding.num.textSize)
 
         binding.heart.layoutParams.width = application.px2PxElder(binding.heart.layoutParams.width)
         binding.heart.layoutParams.height = application.px2PxElder(binding.heart.layoutParams.height)
@@ -182,6 +183,8 @@ class ListAdapter(
             }
 
             viewHolder.bindTitle(tvModel.tv.title)
+            viewHolder.bindNum(tvModel)
+            viewHolder.bindEpgNow(tvModel)
 
             viewHolder.bindImage(tvModel)
         }
@@ -200,6 +203,25 @@ class ListAdapter(
             binding.title.text = text
         }
 
+        fun bindNum(tvModel: TVModel) {
+            val tv = tvModel.tv
+            val channelNum = if (tv.number == -1) tv.id.plus(1) else tv.number
+            binding.num.text = channelNum.toString()
+        }
+
+        fun bindEpgNow(tvModel: TVModel) {
+            val now = Utils.getDateTimestamp()
+            val current = tvModel.epg.value?.firstOrNull {
+                it.beginTime <= now && it.endTime > now
+            }
+            if (current != null) {
+                binding.epgNow.text = current.title
+                binding.epgNow.visibility = View.VISIBLE
+            } else {
+                binding.epgNow.visibility = View.GONE
+            }
+        }
+
         fun bindImage(tvModel: TVModel) {
             val tv = tvModel.tv
 
@@ -211,12 +233,15 @@ class ListAdapter(
         }
 
         fun focus(hasFocus: Boolean) {
+            FocusFx.apply(binding.root, hasFocus)
             if (hasFocus) {
-                binding.title.setTextColor(ContextCompat.getColor(context, R.color.white))
-                binding.root.setBackgroundResource(R.color.focus)
+                binding.title.setTextColor(ContextCompat.getColor(context, R.color.text_primary))
+                binding.epgNow.setTextColor(
+                    ContextCompat.getColor(context, R.color.text_secondary)
+                )
             } else {
-                binding.title.setTextColor(ContextCompat.getColor(context, R.color.title_blur))
-                binding.root.setBackgroundResource(R.color.blur)
+                binding.title.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+                binding.epgNow.setTextColor(ContextCompat.getColor(context, R.color.text_dim))
             }
         }
 

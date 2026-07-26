@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.lizongying.mytv0.databinding.MenuBinding
 import com.lizongying.mytv0.models.TVListModel
 import com.lizongying.mytv0.models.TVModel
+import com.lizongying.mytv0.view.FocusFx
 
 class MenuFragment : Fragment(), GroupAdapter.ItemListener, ListAdapter.ItemListener {
     private var _binding: MenuBinding? = null
@@ -233,6 +234,8 @@ class MenuFragment : Fragment(), GroupAdapter.ItemListener, ListAdapter.ItemList
             R.string.channel_not_exist.showToast()
             return
         }
+
+        _binding?.let { FocusFx.panelIn(it.menuPanel) }
 
         val position = viewModel.groupModel.positionPlayingValue
         if (position != viewModel.groupModel.positionValue
