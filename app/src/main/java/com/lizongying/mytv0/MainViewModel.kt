@@ -163,10 +163,15 @@ class MainViewModel : ViewModel() {
             return
         }
 
+        // 同名频道（多线路/多分组）只预加载一次
+        val seen = mutableSetOf<String>()
         for (tvModel in listModel) {
             var name = tvModel.tv.name
             if (name.isEmpty()) {
                 name = tvModel.tv.title
+            }
+            if (name.isEmpty() || !seen.add(name)) {
+                continue
             }
             val url = tvModel.tv.logo
             var urls =

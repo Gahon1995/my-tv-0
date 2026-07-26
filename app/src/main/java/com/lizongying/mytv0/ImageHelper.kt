@@ -18,6 +18,9 @@ class ImageHelper(private val context: Context) {
     private var dir: File = File(cacheDir, LOGO)
     private val files = ConcurrentHashMap<String, File>()
 
+    // 本次会话内已失败的 key，避免每次进入列表都重复请求失效 logo
+    private val failedKeys = ConcurrentHashMap.newKeySet<String>()
+
     init {
         if (!dir.exists()) {
             dir.mkdir()
@@ -57,7 +60,7 @@ class ImageHelper(private val context: Context) {
             return
         }
 
-        if (urlList.isEmpty()) {
+        if (urlList.isEmpty() || failedKeys.contains(key)) {
             return
         }
 
@@ -66,9 +69,10 @@ class ImageHelper(private val context: Context) {
             if (downloadImage(url, file)) {
                 files[file.name] = file
                 Log.d(TAG, "downloadImage success $url ${file.absolutePath}")
-                break
+                return
             }
         }
+        failedKeys.add(key)
     }
 
     fun loadImage(
