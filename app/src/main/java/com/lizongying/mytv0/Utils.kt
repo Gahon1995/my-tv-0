@@ -164,23 +164,15 @@ object Utils {
 
     fun getUrls(url: String): List<String> {
         return if (url.startsWith("https://raw.githubusercontent.com") || url.startsWith("https://github.com")) {
+            // 精简为少量可用代理，并保留直连作为最后回退
             listOf(
+                "https://ghfast.top/",
+                "https://gh-proxy.com/",
                 "https://gh.llkk.cc/",
-                "https://github.moeyy.xyz/",
-                "https://mirror.ghproxy.com/",
-                "https://ghproxy.cn/",
                 "https://ghproxy.net/",
-                "https://ghproxy.click/",
-                "https://ghproxy.com/",
-                "https://github.moeyy.cn/",
-                "https://gh-proxy.llyke.com/",
-                "https://www.ghproxy.cc/",
-                "https://cf.ghproxy.cc/",
-                "https://ghp.ci/",
-                "https://ghfast.top"
             ).map {
                 "$it$url"
-            }
+            } + listOf(url)
         } else {
             listOf(url)
         }
