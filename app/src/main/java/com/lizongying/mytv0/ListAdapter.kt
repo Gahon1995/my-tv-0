@@ -76,7 +76,8 @@ class ListAdapter(
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         listTVModel?.let {
-            val tvModel = it.getTVModel(position)!!
+            // peek 不改写列表当前 position，避免滚动绑定时状态被破坏
+            val tvModel = it.peekTVModel(position) ?: return
             val view = viewHolder.itemView
 
             view.isFocusable = true

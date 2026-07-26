@@ -127,6 +127,15 @@ class TVListModel(private val name: String, private val groupIndex: Int) : ViewM
         return tvListValue[idx]
     }
 
+    // 无副作用读取，供 RecyclerView 绑定使用（getTVModel 会改写当前 position）
+    fun peekTVModel(idx: Int): TVModel? {
+        if (idx < 0 || idx >= size()) {
+            return null
+        }
+
+        return tvListValue[idx]
+    }
+
     fun getCurrent(): TVModel? {
         if (positionValue < 0 || positionValue >= size()) {
             return getTVModel(0)

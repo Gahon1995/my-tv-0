@@ -66,7 +66,7 @@ class GroupAdapter(
     }
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
-        val listTVModel = tvGroupModel.getTVListModel(position)!!
+        val listTVModel = tvGroupModel.getTVListModel(position) ?: return
         val view = viewHolder.itemView
 
         if (!defaultFocused && position == defaultFocus) {
@@ -193,10 +193,11 @@ class GroupAdapter(
         val layoutManager = recyclerView.layoutManager as? LinearLayoutManager
         layoutManager?.let {
             val delay = if (first) {
+                // 首次布局尚未完成，延迟等待；之后无需延迟
+                first = false
                 100L
             } else {
-                first = false
-                0
+                0L
             }
 
             recyclerView.postDelayed({

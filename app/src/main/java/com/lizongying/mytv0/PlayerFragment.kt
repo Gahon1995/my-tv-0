@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.media3.common.AudioAttributes
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -88,6 +89,8 @@ class PlayerFragment : Fragment() {
             .setRenderersFactory(renderersFactory)
             .setLoadControl(loadControl)
             .build()
+        // 申请音频焦点：与其他应用（音乐/语音助手）互斥发声
+        player?.setAudioAttributes(AudioAttributes.DEFAULT, true)
         player?.repeatMode = REPEAT_MODE_ALL
         player?.playWhenReady = true
         player?.addListener(object : Player.Listener {
