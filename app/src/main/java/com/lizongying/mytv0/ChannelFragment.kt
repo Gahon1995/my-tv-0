@@ -130,18 +130,20 @@ class ChannelFragment : Fragment() {
         handler.postDelayed(hideRunnable, 0)
     }
 
-    private val playRunnable = Runnable {
-        handler.removeCallbacks(playRunnable)
-        var c = channel - 1
-        viewModel.listModel.find { it.tv.number == channel }?.let {
-            c = it.tv.id
-        }
-        if ((activity as MainActivity).play(c)) {
-            channel = 0
-            channelCount = 0
-            handler.postDelayed(hideRunnable, delay)
-        } else {
-            hideSelf()
+    private val playRunnable = object : Runnable {
+        override fun run() {
+            handler.removeCallbacks(this)
+            var c = channel - 1
+            viewModel.listModel.find { it.tv.number == channel }?.let {
+                c = it.tv.id
+            }
+            if ((activity as MainActivity).play(c)) {
+                channel = 0
+                channelCount = 0
+                handler.postDelayed(hideRunnable, delay)
+            } else {
+                hideSelf()
+            }
         }
     }
 
