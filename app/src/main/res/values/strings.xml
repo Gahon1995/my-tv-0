@@ -78,4 +78,5 @@
     <string name="sources_title">Switch Line</string>
     <string name="auto_retry_hint">Auto retry in 30s</string>
     <string name="config_address">Live source URL</string>
+    <string name="epg_empty">No program guide</string>
 </resources>

@@ -345,9 +345,11 @@ class PlayerFragment : Fragment() {
                     )
                 } else {
                     if (!tv.isLastVideo()) {
+                        // 换线路也走 500ms 退避，避免多条坏线路时快速空转
                         tv.nextVideo()
-                        tv.setReady(true)
                         tv.retryTimes = 0
+                        handler.removeCallbacks(retryRunnable)
+                        handler.postDelayed(retryRunnable, 500L)
                     } else {
                         // 永不黑屏：不停留在错误页等人工处理，
                         // 显示友好提示并在 30s 后自动从第一条线路重新尝试
@@ -371,6 +373,8 @@ class PlayerFragment : Fragment() {
         // 换台时取消上一个频道的重试/自动恢复任务，避免误触发
         handler.removeCallbacks(retryRunnable)
         handler.removeCallbacks(autoRecoverRunnable)
+        // 显式停掉旧流：让旧连接尽快释放，弱网下减少带宽竞争
+        player?.stop()
         this.tvModel = tvModel
         // 回看是有限长流：关闭循环以便播完回直播；直播维持循环
         player?.repeatMode = if (tvModel.isCatchup) Player.REPEAT_MODE_OFF else REPEAT_MODE_ALL

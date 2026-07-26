@@ -685,6 +685,8 @@ class MainViewModel : ViewModel() {
         groupModel.setChange()
 
         viewModelScope.launch {
+            // 延迟预载 logo：避免启动时与起播抢带宽
+            kotlinx.coroutines.delay(10_000)
             preloadLogo()
         }
 

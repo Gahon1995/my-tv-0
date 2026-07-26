@@ -5,5 +5,7 @@
         <attr name="glassRadius" format="dimension" />
         <!-- 玻璃渐变+描边覆盖层 drawable，默认 bg_glass_panel -->
         <attr name="glassOverlay" format="reference" />
+        <!-- 深色底颜色（含透明度），默认 #CC10161F（80%） -->
+        <attr name="glassBaseColor" format="color" />
     </declare-styleable>
 </resources>

@@ -172,14 +172,20 @@ class ListAdapter(
                     }
 
                     if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                        tvModel.setLike(!(tvModel.like.value as Boolean))
-                        viewHolder.like(tvModel.like.value as Boolean)
-                        return@setOnKeyListener true
+                        // 右键：展开该频道节目单（收藏改为长按 OK）
+                        return@setOnKeyListener listener?.onShowEpg(tvModel) == true
                     }
 
                     return@setOnKeyListener listener?.onKey(this, keyCode) == true
                 }
                 false
+            }
+
+            // 长按 OK：收藏/取消收藏
+            view.setOnLongClickListener {
+                tvModel.setLike(!(tvModel.like.value as Boolean))
+                viewHolder.like(tvModel.like.value as Boolean)
+                true
             }
 
             viewHolder.bindTitle(tvModel.tv.title)
@@ -284,6 +290,7 @@ class ListAdapter(
         fun onItemFocusChange(tvModel: TVModel, hasFocus: Boolean)
         fun onItemClicked(position: Int, type: String = "list")
         fun onKey(listAdapter: ListAdapter, keyCode: Int): Boolean
+        fun onShowEpg(tvModel: TVModel): Boolean
     }
 
     fun setItemListener(listener: ItemListener) {

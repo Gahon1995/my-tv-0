@@ -28,9 +28,7 @@ class GlassPanelLayout @JvmOverloads constructor(
     private var radiusPx: Float
     private val overlayDrawable: Drawable
 
-    private val basePaint = Paint().apply {
-        color = 0xCC10161F.toInt() // 80% 深底，保证文字可读
-    }
+    private val basePaint = Paint()
 
     init {
         val ta = context.obtainStyledAttributes(attrs, R.styleable.GlassPanelLayout)
@@ -41,6 +39,10 @@ class GlassPanelLayout @JvmOverloads constructor(
         val overlayRes = ta.getResourceId(
             R.styleable.GlassPanelLayout_glassOverlay,
             R.drawable.bg_glass_panel
+        )
+        basePaint.color = ta.getColor(
+            R.styleable.GlassPanelLayout_glassBaseColor,
+            0xCC10161F.toInt() // 默认 80% 深底，保证文字可读
         )
         ta.recycle()
 
