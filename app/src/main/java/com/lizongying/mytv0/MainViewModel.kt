@@ -595,8 +595,13 @@ class MainViewModel : ViewModel() {
                     }
                 }
                 for ((title, uris) in tvMap) {
-                    val channelGroup = uris.first();
-                    uris.drop(1);
+                    // 列表首元素是分组名，必须剥离（原代码 uris.drop(1) 返回值被丢弃，
+                    // 导致分组名混入播放地址，每个频道都会先重试一次无效地址）
+                    val channelGroup = uris.first()
+                    val realUris = uris.drop(1)
+                    if (realUris.isEmpty()) {
+                        continue
+                    }
                     val tv = TV(
                         -1,
                         "",
@@ -604,7 +609,7 @@ class MainViewModel : ViewModel() {
                         "",
                         "",
                         "",
-                        uris,
+                        realUris,
                         0,
                         emptyMap(),
                         channelGroup,
