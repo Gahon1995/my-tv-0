@@ -11,6 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
         android:background="@drawable/bg_item_selector"
+        android:duplicateParentState="true"
         android:paddingStart="14dp"
         android:paddingEnd="14dp"
         android:paddingTop="10dp"
