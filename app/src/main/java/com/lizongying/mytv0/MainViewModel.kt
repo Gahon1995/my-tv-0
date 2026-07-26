@@ -194,24 +194,33 @@ class MainViewModel : ViewModel() {
         try {
             val res = EPGXmlParser().parse(input)
 
-            withContext(Dispatchers.Main) {
-                val e1 = mutableMapOf<String, List<EPG>>()
-                for (m in listModel) {
-                    val name = m.tv.name.ifEmpty { m.tv.title }.lowercase()
-                    if (name.isEmpty()) {
-                        continue
-                    }
+            // 名称匹配是 O(N*M) 字符串扫描，必须在 IO 线程完成；
+            // 主线程只做 setEpg（LiveData 更新）
+            val matched = mutableListOf<Pair<TVModel, List<EPG>>>()
+            val e1 = mutableMapOf<String, List<EPG>>()
+            for (m in listModel) {
+                val name = m.tv.name.ifEmpty { m.tv.title }.lowercase()
+                if (name.isEmpty()) {
+                    continue
+                }
 
-                    for ((n, epg) in res) {
-                        if (name.contains(n, ignoreCase = true)) {
-                            m.setEpg(epg)
-                            e1[name] = epg
-                            break
-                        }
+                for ((n, epg) in res) {
+                    if (name.contains(n, ignoreCase = true)) {
+                        matched.add(Pair(m, epg))
+                        e1[name] = epg
+                        break
                     }
                 }
-                cacheEPG.writeText(gson.toJson(e1))
             }
+
+            withContext(Dispatchers.Main) {
+                for ((m, epg) in matched) {
+                    m.setEpg(epg)
+                }
+            }
+
+            // 大 JSON 序列化留在 IO 线程
+            cacheEPG.writeText(gson.toJson(e1))
             Log.i(TAG, "readEPG success")
             true
         } catch (e: Exception) {
@@ -224,17 +233,22 @@ class MainViewModel : ViewModel() {
         try {
             val res: Map<String, List<EPG>> = gson.fromJson(str, typeEPGMap)
 
-            withContext(Dispatchers.Main) {
-                for (m in listModel) {
-                    val name = m.tv.name.ifEmpty { m.tv.title }.lowercase()
-                    if (name.isEmpty()) {
-                        continue
-                    }
+            val matched = mutableListOf<Pair<TVModel, List<EPG>>>()
+            for (m in listModel) {
+                val name = m.tv.name.ifEmpty { m.tv.title }.lowercase()
+                if (name.isEmpty()) {
+                    continue
+                }
 
-                    val epg = res[name]
-                    if (epg != null) {
-                        m.setEpg(epg)
-                    }
+                val epg = res[name]
+                if (epg != null) {
+                    matched.add(Pair(m, epg))
+                }
+            }
+
+            withContext(Dispatchers.Main) {
+                for ((m, epg) in matched) {
+                    m.setEpg(epg)
                 }
             }
             Log.i(TAG, "readEPG success")

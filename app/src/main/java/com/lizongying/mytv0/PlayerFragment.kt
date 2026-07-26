@@ -76,11 +76,26 @@ class PlayerFragment : Fragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 seekBarDragging = false
                 seekBar?.let {
-                    player?.seekTo(it.progress * 1000L)
+                    // 回看 seek＝按绝对时间重新请求流（伪直播流内 seek 会被拉回）
+                    val tv = tvModel ?: return@let
+                    tv.seekCatchup(tv.catchupOrigBegin + it.progress)
                 }
                 scheduleHideSeek()
             }
         })
+    }
+
+    /** 当前回看的节目内绝对位置（秒，相对节目开始） */
+    private fun catchupAbsPosition(): Long {
+        val tv = tvModel ?: return 0
+        val playerPos = (player?.currentPosition ?: 0) / 1000
+        return (tv.catchupBegin - tv.catchupOrigBegin) + playerPos
+    }
+
+    /** 节目总时长（秒） */
+    private fun catchupDuration(): Long {
+        val tv = tvModel ?: return 0
+        return (tv.catchupEnd - tv.catchupOrigBegin).coerceAtLeast(0)
     }
 
     fun isCatchup(): Boolean {
@@ -98,7 +113,7 @@ class PlayerFragment : Fragment() {
         }
         val title = if (tv.catchupTitle.isEmpty()) tv.tv.title else tv.catchupTitle
         binding.seekTitle.text = "$title  (${
-            Utils.getDateFormat("HH:mm", tv.catchupBegin.toInt())
+            Utils.getDateFormat("HH:mm", tv.catchupOrigBegin.toInt())
         }-${Utils.getDateFormat("HH:mm", tv.catchupEnd.toInt())})"
         binding.seekOverlay.visibility = View.VISIBLE
         com.lizongying.mytv0.view.FocusFx.panelIn(binding.seekOverlay)
@@ -128,18 +143,20 @@ class PlayerFragment : Fragment() {
 
     private val updateSeekRunnable = object : Runnable {
         override fun run() {
-            val p = player ?: return
             if (_binding == null) {
                 return
             }
-            val duration = p.duration
+            // 进度条以节目绝对时间轴为准（EPG 窗口），不依赖流内 duration——
+            // 伪直播回看流的 duration 往往不可信（时长不对的根因）
+            val duration = catchupDuration()
             if (duration > 0) {
-                binding.seekBar.max = (duration / 1000).toInt()
+                binding.seekBar.max = duration.toInt()
                 if (!seekBarDragging) {
-                    binding.seekBar.progress = (p.currentPosition / 1000).toInt()
-                    binding.seekPosition.text = formatSeekTime(p.currentPosition)
+                    val pos = catchupAbsPosition().coerceIn(0, duration)
+                    binding.seekBar.progress = pos.toInt()
+                    binding.seekPosition.text = formatSeekTime(pos * 1000)
                 }
-                binding.seekDuration.text = formatSeekTime(duration)
+                binding.seekDuration.text = formatSeekTime(duration * 1000)
             }
             handler.postDelayed(this, 1000)
         }
@@ -157,19 +174,25 @@ class PlayerFragment : Fragment() {
         }
     }
 
-    // 快进/快退（秒），并弹出时移条
+    // 快进/快退（秒），并弹出时移条。
+    // 流本身可 seek（duration 可信且窗口足够）时走流内 seek；
+    // 否则按绝对时间重新请求新窗口（伪直播流 seek 会被拉回的根治方案）
     fun seekOffset(seconds: Int) {
         val p = player ?: return
+        val tv = tvModel ?: return
         if (!isCatchup()) {
             return
         }
-        val duration = p.duration
-        var target = p.currentPosition + seconds * 1000L
-        target = target.coerceAtLeast(0)
-        if (duration > 0) {
-            target = target.coerceAtMost(duration)
+        val target = p.currentPosition + seconds * 1000L
+        val streamDuration = p.duration
+        val seekableInStream = p.isCurrentMediaItemSeekable &&
+                streamDuration > 0 &&
+                target in 0 until streamDuration
+        if (seekableInStream) {
+            p.seekTo(target)
+        } else {
+            tv.seekCatchup(tv.catchupBegin + (p.currentPosition / 1000) + seconds)
         }
-        p.seekTo(target)
         showSeekOverlay()
     }
 
@@ -324,6 +347,21 @@ class PlayerFragment : Fragment() {
                     Log.i(TAG, "behind live window, re-seek to live edge")
                     player?.seekToDefaultPosition()
                     player?.prepare()
+                    return
+                }
+
+                // 回看流失败：快速重试 2 次后直接回直播，
+                // 不走换线路/长退避流程（回看 URL 是模板拼的，其他线路大概率同样失败）
+                if (tv.isCatchup) {
+                    if (tv.retryTimes < 2) {
+                        tv.retryTimes++
+                        handler.removeCallbacks(retryRunnable)
+                        handler.postDelayed(retryRunnable, 500L)
+                    } else {
+                        Log.i(TAG, "catchup failed, return to live")
+                        R.string.catchup_not_supported.showToast()
+                        returnToLive()
+                    }
                     return
                 }
 

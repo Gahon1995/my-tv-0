@@ -76,8 +76,11 @@ class TVModel(var tv: TV) : ViewModel() {
     val isCatchup: Boolean
         get() = _isCatchup
 
-    // 回看窗口（unix 秒）
+    // 回看窗口（unix 秒）。catchupBegin 是当前请求的起点；
+    // catchupOrigBegin 是节目原始起点（进度条刻度基准，seek 重请求时不变）
     var catchupBegin = 0L
+        private set
+    var catchupOrigBegin = 0L
         private set
     var catchupEnd = 0L
         private set
@@ -95,9 +98,22 @@ class TVModel(var tv: TV) : ViewModel() {
     // 播放指定时间段回看；通过 ready 触发正常播放流程
     fun playCatchup(begin: Long, end: Long, title: String = "") {
         catchupBegin = begin
+        catchupOrigBegin = begin
         catchupEnd = end
         catchupTitle = title
         _isCatchup = true
+        setErrInfo("")
+        retryTimes = 0
+        _ready.value = true
+    }
+
+    /**
+     * 回看内 seek：以重新请求新时间窗实现（伪直播流内 seek 会被拉回）。
+     * targetAbs 为目标绝对时间（unix 秒），自动夹取在节目窗口内。
+     */
+    fun seekCatchup(targetAbs: Long) {
+        if (!_isCatchup) return
+        catchupBegin = targetAbs.coerceIn(catchupOrigBegin, catchupEnd - 5)
         setErrInfo("")
         retryTimes = 0
         _ready.value = true
