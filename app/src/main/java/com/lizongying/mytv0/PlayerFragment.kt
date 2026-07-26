@@ -17,6 +17,7 @@ import androidx.media3.common.Player.DISCONTINUITY_REASON_AUTO_TRANSITION
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
@@ -33,7 +34,6 @@ class PlayerFragment : Fragment() {
     private var player: ExoPlayer? = null
 
     private var tvModel: TVModel? = null
-    private val aspectRatio = 16f / 9f
 
     private val handler = Handler(Looper.myLooper()!!)
     private val delayHideVolume = 2 * 1000L
@@ -74,24 +74,44 @@ class PlayerFragment : Fragment() {
             player?.release()
         }
 
+        // 直播快速起播：降低起播/重缓冲水位，减小换台等待时间
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
+                DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
+                1000, // 起播缓冲 1s（默认 2.5s）
+                2000  // seek/重缓冲后 2s（默认 5s）
+            )
+            .build()
+
         player = ExoPlayer.Builder(ctx)
             .setRenderersFactory(renderersFactory)
+            .setLoadControl(loadControl)
             .build()
         player?.repeatMode = REPEAT_MODE_ALL
         player?.playWhenReady = true
         player?.addListener(object : Player.Listener {
             override fun onVideoSizeChanged(videoSize: VideoSize) {
-                val ratio = playerView.measuredWidth.div(playerView.measuredHeight)
-                val layoutParams = playerView.layoutParams
-                if (ratio < aspectRatio) {
-                    layoutParams?.height =
-                        (playerView.measuredWidth.div(aspectRatio)).toInt()
-                    playerView.layoutParams = layoutParams
-                } else if (ratio > aspectRatio) {
-                    layoutParams?.width =
-                        (playerView.measuredHeight.times(aspectRatio)).toInt()
-                    playerView.layoutParams = layoutParams
+                // 按实际视频比例适配（修复：整数除法恒为1、写死16:9导致4:3频道拉伸、
+                // layoutParams 被改小后无法恢复的问题），始终以父容器全尺寸计算
+                val root = _binding?.root ?: return
+                val parentW = root.measuredWidth
+                val parentH = root.measuredHeight
+                if (parentW == 0 || parentH == 0 || videoSize.width == 0 || videoSize.height == 0) {
+                    return
                 }
+                val videoRatio =
+                    videoSize.width * videoSize.pixelWidthHeightRatio / videoSize.height
+                val parentRatio = parentW.toFloat() / parentH
+                val layoutParams = playerView.layoutParams ?: return
+                if (parentRatio > videoRatio) {
+                    layoutParams.width = (parentH * videoRatio).toInt()
+                    layoutParams.height = parentH
+                } else {
+                    layoutParams.width = parentW
+                    layoutParams.height = (parentW / videoRatio).toInt()
+                }
+                playerView.layoutParams = layoutParams
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -135,6 +155,15 @@ class PlayerFragment : Fragment() {
 
                 val tv = tvModel!!
 
+                // 直播流落后于窗口（HLS 缓冲不足/网络抖动），直接回到直播点重试即可，
+                // 无需切换源类型或线路
+                if (error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
+                    Log.i(TAG, "behind live window, re-seek to live edge")
+                    player?.seekToDefaultPosition()
+                    player?.prepare()
+                    return
+                }
+
                 if (tv.retryTimes < tv.retryMaxTimes) {
                     var last = true
                     if (tv.getSourceTypeDefault() == SourceType.UNKNOWN) {
@@ -171,6 +200,8 @@ class PlayerFragment : Fragment() {
 
     @OptIn(UnstableApi::class)
     fun play(tvModel: TVModel) {
+        // 换台时取消上一个频道的重试任务，避免误触发
+        handler.removeCallbacks(retryRunnable)
         this.tvModel = tvModel
         player?.run {
             tvModel.getVideoUrl() ?: return
