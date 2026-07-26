@@ -227,6 +227,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun watch() {
         viewModel.listModel.forEach { tvModel ->
+            // 防止 group change 时重复注册观察者（会导致一次换台触发多次播放）
+            tvModel.errInfo.removeObservers(this)
+            tvModel.ready.removeObservers(this)
+            tvModel.like.removeObservers(this)
+
             tvModel.errInfo.observe(this) { _ ->
 
                 if (tvModel.errInfo.value != null
@@ -424,7 +429,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun onPlayEnd() {
-        val tvModel = viewModel.groupModel.getCurrent()!!
+        val tvModel = viewModel.groupModel.getCurrent() ?: return
         if (SP.repeatInfo) {
             infoFragment.show(tvModel)
             if (SP.channelNum) {
@@ -434,7 +439,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun play(position: Int): Boolean {
-        return if (position > -1 && position < viewModel.groupModel.getAllList()!!.size()) {
+        val allSize = viewModel.groupModel.getAllList()?.size() ?: 0
+        return if (position > -1 && position < allSize) {
             val prevGroup = viewModel.groupModel.positionValue
             val tvModel = viewModel.groupModel.getPosition(position)
 
