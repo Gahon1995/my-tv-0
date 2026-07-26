@@ -140,13 +140,16 @@ class PlayerFragment : Fragment() {
                     if (tv.getSourceTypeDefault() == SourceType.UNKNOWN) {
                         last = tv.nextSourceType()
                     }
-                    tv.setReady(true)
                     if (last) {
                         tv.retryTimes++
                     }
+                    // 重试退避：0.5s 起，随重试次数递增，上限 2s，避免瞬时打满
+                    val delay = (500L * (tv.retryTimes + 1)).coerceAtMost(2000L)
+                    handler.removeCallbacks(retryRunnable)
+                    handler.postDelayed(retryRunnable, delay)
                     Log.i(
                         TAG,
-                        "retry ${tv.videoIndex.value} ${tv.getSourceTypeCurrent()} ${tv.retryTimes}/${tv.retryMaxTimes}"
+                        "retry in ${delay}ms ${tv.videoIndex.value} ${tv.getSourceTypeCurrent()} ${tv.retryTimes}/${tv.retryMaxTimes}"
                     )
                 } else {
                     if (!tv.isLastVideo()) {
@@ -260,6 +263,10 @@ class PlayerFragment : Fragment() {
         binding.volume.visibility = View.GONE
     }
 
+    private val retryRunnable = Runnable {
+        tvModel?.setReady(true)
+    }
+
     override fun onResume() {
         super.onResume()
         if (player?.isPlaying == false) {
@@ -277,6 +284,7 @@ class PlayerFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
+        handler.removeCallbacks(retryRunnable)
         player?.release()
     }
 
