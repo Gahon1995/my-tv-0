@@ -26,12 +26,18 @@ class ImageHelper(private val context: Context) {
             dir.mkdir()
         }
         dir.listFiles()?.forEach { file ->
-            files[file.name] = file
+            if (file.name.endsWith(".tmp")) {
+                // 上次会话遗留的未完成下载
+                file.delete()
+            } else {
+                files[file.name] = file
+            }
         }
     }
 
     private suspend fun downloadImage(url: String, file: File): Boolean {
         return withContext(Dispatchers.IO) {
+            val tmp = File(file.parentFile, "${file.name}.tmp")
             try {
                 val request = okhttp3.Request.Builder()
                     .url(url)
@@ -39,12 +45,23 @@ class ImageHelper(private val context: Context) {
 
                 HttpClient.okHttpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) return@withContext false
-                    response.bodyAlias()?.byteStream()?.copyTo(file.outputStream())
-                    true
+                    val body = response.bodyAlias() ?: return@withContext false
+                    // 先写临时文件再原子重命名，避免中断产生损坏缓存；显式关闭流防止 fd 泄漏
+                    body.byteStream().use { input ->
+                        tmp.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    if (tmp.length() == 0L) {
+                        tmp.delete()
+                        return@withContext false
+                    }
+                    tmp.renameTo(file)
                 }
             } catch (e: Exception) {
 //                Log.e(TAG, "downloadImage error $url", e)
                 Log.e(TAG, "downloadImage error $url")
+                tmp.delete()
                 false
             }
         }

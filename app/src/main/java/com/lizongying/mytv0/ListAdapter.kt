@@ -1,9 +1,6 @@
 package com.lizongying.mytv0
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
 import android.util.Log
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -205,27 +202,8 @@ class ListAdapter(
         fun bindImage(tvModel: TVModel) {
             val tv = tvModel.tv
 
-            val width = 300
-            val height = 180
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
-
             val channelNum = if (tv.number == -1) tv.id.plus(1) else tv.number
-            var size = 150f
-            if (channelNum > 99) {
-                size = 100f
-            }
-            if (channelNum > 999) {
-                size = 75f
-            }
-            val paint = Paint().apply {
-                color = ContextCompat.getColor(context, R.color.title_blur)
-                textSize = size
-                textAlign = Paint.Align.CENTER
-            }
-            val x = width / 2f
-            val y = height / 2f - (paint.descent() + paint.ascent()) / 2
-            canvas.drawText(channelNum.toString(), x, y, paint)
+            val bitmap = PlaceholderLogo.get(context, channelNum)
 
             val name = if (tv.name.isNotEmpty()) { tv.name } else { tv.title }
             imageHelper.loadImage(name, binding.icon, bitmap, tv.logo)

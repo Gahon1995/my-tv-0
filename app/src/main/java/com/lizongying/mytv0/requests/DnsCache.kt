@@ -8,15 +8,21 @@ import java.util.concurrent.ConcurrentHashMap
 
 
 class DnsCache : Dns {
-    private val dnsCache = ConcurrentHashMap<String, List<InetAddress>>()
+    private data class Entry(val addresses: List<InetAddress>, val time: Long)
+
+    private val dnsCache = ConcurrentHashMap<String, Entry>()
 
     override fun lookup(hostname: String): List<InetAddress> {
         if (hostname.isEmpty()) {
-            return Dns.SYSTEM.lookup(hostname);
+            return Dns.SYSTEM.lookup(hostname)
         }
 
+        // TTL 过期后重新解析，避免 CDN 换 IP 后长时间连不上旧地址
         dnsCache[hostname]?.let {
-            return it
+            if (System.currentTimeMillis() - it.time < TTL_MILLIS) {
+                return it.addresses
+            }
+            dnsCache.remove(hostname)
         }
 
         val ipv4Addresses = mutableListOf<InetAddress>()
@@ -33,9 +39,13 @@ class DnsCache : Dns {
         val addressesNew = ipv4Addresses + ipv6Addresses
 
         if (addressesNew.isNotEmpty()) {
-            dnsCache[hostname] = addressesNew
+            dnsCache[hostname] = Entry(addressesNew, System.currentTimeMillis())
         }
 
         return addressesNew
+    }
+
+    companion object {
+        private const val TTL_MILLIS = 10 * 60 * 1000L
     }
 }
