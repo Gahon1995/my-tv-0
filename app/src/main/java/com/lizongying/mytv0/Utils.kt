@@ -99,7 +99,11 @@ object Utils {
                     .url("https://ip.ddnspod.com/timestamp")
                     .build()
 
-                HttpClient.okHttpClient.newCall(request).execute().use { response ->
+                // 校时非关键路径，限制 3s 总超时避免拖慢启动
+                val client = HttpClient.okHttpClient.newBuilder()
+                    .callTimeout(3, java.util.concurrent.TimeUnit.SECONDS)
+                    .build()
+                client.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) return@withContext 0
                     response.bodyAlias()?.string()?.toLong() ?: 0
                 }
