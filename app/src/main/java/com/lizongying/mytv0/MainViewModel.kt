@@ -56,6 +56,9 @@ class MainViewModel : ViewModel() {
 
     val sources = Sources()
 
+    // TVBox JSON 配置解析后需异步拉取真实直播源，此时不应把 JSON 原文写入缓存
+    private var redirectingToLiveUrl = false
+
     private val _channelsOk = MutableLiveData<Boolean>()
     val channelsOk: LiveData<Boolean>
         get() = _channelsOk
@@ -348,7 +351,13 @@ class MainViewModel : ViewModel() {
 
     fun tryStr2Channels(str: String, file: File?, url: String, id: String = "") {
         try {
+            redirectingToLiveUrl = false
             if (str2Channels(str)) {
+                if (redirectingToLiveUrl) {
+                    // TVBox JSON：真实频道由 importFromUrl 异步导入并写缓存，这里跳过
+                    redirectingToLiveUrl = false
+                    return
+                }
                 Log.i(TAG, "write to cacheFile $cacheFile $str")
                 cacheFile!!.writeText(str)
                 Log.i(TAG, "cacheFile ${getCache()}")
@@ -429,6 +438,7 @@ class MainViewModel : ViewModel() {
                         return false
                     }
                     Log.i(TAG, "TVBox live url $liveUrl")
+                    redirectingToLiveUrl = true
                     viewModelScope.launch {
                         importFromUrl(liveUrl)
                     }
