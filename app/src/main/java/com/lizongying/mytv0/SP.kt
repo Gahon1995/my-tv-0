@@ -64,6 +64,19 @@ object SP {
 
     private const val KEY_GLASS_BLUR = "glass_blur"
 
+    // 远端配置中心（my-tv-server）地址；为空表示不使用远端配置
+    private const val KEY_REMOTE_CONFIG_SERVER = "remote_config_server"
+
+    private const val KEY_REMOTE_CONFIG_ETAG = "remote_config_etag"
+
+    // 远端下发的台标基础地址
+    private const val KEY_LOGO_BASE_URL = "logo_base_url"
+
+    // 用户本地手动修改过的项：远端配置只作默认值，不覆盖这些项
+    private const val KEY_USER_OVERRIDE_EPG = "user_override_epg"
+
+    private const val KEY_USER_OVERRIDE_CONFIG = "user_override_config"
+
     const val DEFAULT_CHANNEL_REVERSAL = true
     const val DEFAULT_CHANNEL_NUM = false
     const val DEFAULT_TIME = true
@@ -234,4 +247,31 @@ object SP {
     var sources: String?
         get() = sp.getString(KEY_SOURCES, DEFAULT_SOURCES)
         set(value) = sp.edit().putString(KEY_SOURCES, value).apply()
+
+    var remoteConfigServer: String?
+        get() = sp.getString(KEY_REMOTE_CONFIG_SERVER, "")
+        set(value) = sp.edit().putString(KEY_REMOTE_CONFIG_SERVER, value).apply()
+
+    var remoteConfigEtag: String?
+        get() = sp.getString(KEY_REMOTE_CONFIG_ETAG, "")
+        set(value) = sp.edit().putString(KEY_REMOTE_CONFIG_ETAG, value).apply()
+
+    var logoBaseUrl: String?
+        get() = sp.getString(KEY_LOGO_BASE_URL, "")
+        set(value) = sp.edit().putString(KEY_LOGO_BASE_URL, value).apply()
+
+    var userOverrideEpg: Boolean
+        get() = sp.getBoolean(KEY_USER_OVERRIDE_EPG, false)
+        set(value) = sp.edit().putBoolean(KEY_USER_OVERRIDE_EPG, value).apply()
+
+    var userOverrideConfig: Boolean
+        get() = sp.getBoolean(KEY_USER_OVERRIDE_CONFIG, false)
+        set(value) = sp.edit().putBoolean(KEY_USER_OVERRIDE_CONFIG, value).apply()
+
+    /** 恢复默认：清除用户覆盖标记，让远端/内置默认重新生效 */
+    fun clearUserOverrides() {
+        userOverrideEpg = false
+        userOverrideConfig = false
+        remoteConfigEtag = ""
+    }
 }

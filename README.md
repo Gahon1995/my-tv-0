@@ -57,7 +57,15 @@
     ]
     ```
 
-推薦配合使用 [my-tv-server](https://github.com/lizongying/my-tv-server)
+## 遠程配置中心
+
+推薦配合 [my-tv-server](https://github.com/Gahon1995/my-tv-server) 使用：在遠程配置網頁（掃碼或 http://0.0.0.0:34567）中填寫「遠程配置中心地址」後，直播源、EPG、台標地址、APK 版本更新（含更新日誌）都會從配置中心自動下發。
+
+* 遠端配置只作為默認值：你在電視上手動改過的直播源/EPG 保持不變
+* 設置中的「恢復默認」會清除本地修改，重新應用遠端配置
+* 配置中心不可達時自動使用上次緩存或內置默認值，不影響使用
+
+開發者向的實現說明見 [docs/remote-config.md](./docs/remote-config.md)
 
 下載安裝 [releases](https://github.com/lizongying/my-tv-0/releases/)
 

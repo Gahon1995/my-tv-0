@@ -47,6 +47,7 @@ class SimpleServer(private val context: Context, private val viewModel: MainView
             "/api/import-uri" -> handleImportUri(session)
             "/api/proxy" -> handleProxy(session)
             "/api/epg" -> handleEPG(session)
+            "/api/remote-server" -> handleRemoteServer(session)
             "/api/default-channel" -> handleDefaultChannel(session)
             "/api/remove-source" -> handleRemoveSource(session)
             else -> handleStaticContent()
@@ -85,6 +86,7 @@ class SimpleServer(private val context: Context, private val viewModel: MainView
                 channelDefault = SP.channel,
                 proxy = SP.proxy ?: "",
                 epg = SP.epg ?: "",
+                remoteServer = SP.remoteConfigServer ?: "",
                 history = history
             )
             response = gson.toJson(respSettings) ?: ""
@@ -148,6 +150,8 @@ class SimpleServer(private val context: Context, private val viewModel: MainView
         try {
             readBody(session)?.let {
                 handler.post {
+                    // 用户主动导入 → 本地覆盖优先，远端配置不再改写直播源
+                    SP.userOverrideConfig = true
                     viewModel.tryStr2Channels(it, null, "")
                 }
             }
@@ -170,6 +174,7 @@ class SimpleServer(private val context: Context, private val viewModel: MainView
                 val req = gson.fromJson(it, ReqSourceAdd::class.java)
                 val uri = Uri.parse(req.uri)
                 handler.post {
+                    SP.userOverrideConfig = true
                     viewModel.importFromUri(uri, req.id)
                 }
             }
@@ -218,6 +223,7 @@ class SimpleServer(private val context: Context, private val viewModel: MainView
                     val req = gson.fromJson(it, ReqSettings::class.java)
                     if (req.epg != null) {
                         SP.epg = req.epg
+                        SP.userOverrideEpg = true
                         viewModel.updateEPG()
                         R.string.default_epg_set_success.showToast()
                     } else {
@@ -235,6 +241,34 @@ class SimpleServer(private val context: Context, private val viewModel: MainView
         }
         val response = ""
         return newFixedLengthResponse(Response.Status.OK, "text/plain", response)
+    }
+
+    private fun handleRemoteServer(session: IHTTPSession): Response {
+        try {
+            readBody(session)?.let {
+                handler.post {
+                    val req = gson.fromJson(it, ReqSettings::class.java)
+                    if (req.uri != null) {
+                        SP.remoteConfigServer = req.uri!!.trim()
+                        SP.remoteConfigEtag = ""
+                        R.string.remote_server_set_success.showToast()
+                        Log.i(TAG, "set remote server: ${SP.remoteConfigServer}")
+                        // 立即拉取并应用远端配置
+                        viewModel.updateConfig()
+                    } else {
+                        R.string.remote_server_set_failure.showToast()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "handleRemoteServer", e)
+            return newFixedLengthResponse(
+                Response.Status.INTERNAL_ERROR,
+                MIME_PLAINTEXT,
+                e.message
+            )
+        }
+        return newFixedLengthResponse(Response.Status.OK, "text/plain", "")
     }
 
     private fun handleDefaultChannel(session: IHTTPSession): Response {
