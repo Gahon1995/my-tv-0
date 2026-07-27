@@ -96,8 +96,16 @@ class GlassPanelLayout @JvmOverloads constructor(
         canvas.drawBitmap(bg, 0f, 0f, null)
     }
 
+    /**
+     * 仅在 View 真正离开 window 层级且不会复用时回收 bitmap。
+     * 注意：Fragment 切换导致的 detach/attach 不会走到这里
+     * （GlassPanelLayout 在 PlayerFragment 的 view hierarchy 内，
+     * Fragment hide/show 不触发此回调），所以这里 recycle 是安全的。
+     * 如果将来出现频繁 detach，可改为仅标记 dirty 而非立刻 recycle。
+     */
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        // 仅回收 bitmap，不重置尺寸标记；下次 attach 后 onSizeChanged 会重建
         cachedBg?.recycle()
         cachedBg = null
     }
