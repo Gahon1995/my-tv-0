@@ -248,8 +248,10 @@ object SP {
         get() = sp.getString(KEY_SOURCES, DEFAULT_SOURCES)
         set(value) = sp.edit().putString(KEY_SOURCES, value).apply()
 
+    const val DEFAULT_REMOTE_CONFIG_SERVER = "https://iptv.p.gahon.top"
+
     var remoteConfigServer: String?
-        get() = sp.getString(KEY_REMOTE_CONFIG_SERVER, "")
+        get() = sp.getString(KEY_REMOTE_CONFIG_SERVER, DEFAULT_REMOTE_CONFIG_SERVER)
         set(value) = sp.edit().putString(KEY_REMOTE_CONFIG_SERVER, value).apply()
 
     var remoteConfigEtag: String?
