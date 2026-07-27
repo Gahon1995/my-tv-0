@@ -50,8 +50,8 @@ class GlassPanelLayout @JvmOverloads constructor(
 
         setWillNotDraw(false)
 
-        // 圆角裁切
-        clipToOutline = true
+        // 圆角通过 ViewOutlineProvider 提供 elevation shadow，不 clip children
+        // （避免裁剪导航高亮背景、列表文字等）
         outlineProvider = object : ViewOutlineProvider() {
             override fun getOutline(view: View, outline: Outline) {
                 outline.setRoundRect(0, 0, view.width, view.height, radiusPx)
@@ -70,8 +70,8 @@ class GlassPanelLayout @JvmOverloads constructor(
         val h = height
         if (w == 0 || h == 0) return
 
-        // 深色底
-        canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), basePaint)
+        // 圆角深色底
+        canvas.drawRoundRect(0f, 0f, w.toFloat(), h.toFloat(), radiusPx, radiusPx, basePaint)
 
         // 玻璃渐变 + 描边
         overlayDrawable.setBounds(0, 0, w, h)

@@ -4,35 +4,26 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 
 /**
- * 焦点动效统一入口：获得焦点轻微放大，失去焦点复位。
+ * 焦点动效统一入口。
+ * 去除 scale 动画（低端设备卡顿），焦点态由 selector drawable 处理。
+ * 保留 panelIn 和 reset 以供特殊需求。
  */
 object FocusFx {
 
     private val decel = DecelerateInterpolator()
 
+    /** 焦点变化：不做动画，焦点态由 bg_item_selector 背景 drawable 处理 */
     fun apply(view: View, hasFocus: Boolean) {
-        if (hasFocus) {
-            view.animate()
-                .scaleX(1.03f).scaleY(1.03f)
-                .setDuration(120)
-                .setInterpolator(decel)
-                .start()
-        } else {
-            view.animate()
-                .scaleX(1f).scaleY(1f)
-                .setDuration(100)
-                .setInterpolator(decel)
-                .start()
-        }
+        // no-op: 焦点态完全由 selector drawable 渲染，避免 scale 动画造成卡顿
     }
 
     /** 面板出现动效 */
     fun panelIn(view: View) {
         view.alpha = 0f
-        view.translationY = view.resources.displayMetrics.density * 16
+        view.translationY = view.resources.displayMetrics.density * 12
         view.animate()
             .alpha(1f).translationY(0f)
-            .setDuration(180)
+            .setDuration(150)
             .setInterpolator(decel)
             .start()
     }
