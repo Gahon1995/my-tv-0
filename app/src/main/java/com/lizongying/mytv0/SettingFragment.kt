@@ -37,6 +37,9 @@ class SettingFragment : Fragment() {
 
     private lateinit var viewModel: MainViewModel
 
+    /** 当前激活的左侧导航项，用于右侧面板控件 nextFocusLeft 回指 */
+    private var activeNav: View? = null
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -97,10 +100,6 @@ class SettingFragment : Fragment() {
         }
 
         // ===== ③ 界面外观 =====
-        bindSwitch(binding.switchGlassBlur, SP.glassBlur) {
-            SP.glassBlur = it
-        }
-
         bindSwitch(binding.switchElderMode, SP.elderMode) {
             SP.elderMode = it
             R.string.restart_to_apply.showToast()
@@ -123,21 +122,13 @@ class SettingFragment : Fragment() {
 
         // ===== ④ 更新与关于 =====
         binding.checkVersion.setOnClickListener {
+            R.string.checking_update.showToast()
             requestInstallPermissions()
             mainActivity.settingActive()
         }
 
         bindSwitch(binding.switchBootStartup, SP.bootStartup) {
             SP.bootStartup = it
-        }
-
-        binding.appreciate.setOnClickListener {
-            val imageModalFragment = ModalFragment()
-            val args = Bundle()
-            args.putInt(ModalFragment.KEY_DRAWABLE_ID, R.drawable.appreciate)
-            imageModalFragment.arguments = args
-            imageModalFragment.show(requireFragmentManager(), ModalFragment.TAG)
-            mainActivity.settingActive()
         }
 
         binding.setting.setOnClickListener {
@@ -155,7 +146,6 @@ class SettingFragment : Fragment() {
             binding.clear,
             binding.checkVersion,
             binding.exit,
-            binding.appreciate,
         )) {
             i.setOnFocusChangeListener { v, hasFocus ->
                 FocusFx.apply(v, hasFocus)
@@ -199,6 +189,7 @@ class SettingFragment : Fragment() {
             nav.setOnFocusChangeListener { v, hasFocus ->
                 FocusFx.apply(v, hasFocus)
                 if (hasFocus) {
+                    activeNav = v
                     showGroup(navToGroup, group)
                     nav.setTextColor(
                         ContextCompat.getColor(requireContext(), R.color.text_primary)
@@ -211,9 +202,55 @@ class SettingFragment : Fragment() {
                 (activity as MainActivity).settingActive()
             }
             nav.setOnClickListener {
+                activeNav = nav
                 showGroup(navToGroup, group)
             }
         }
+
+        // 右侧面板中所有可获焦控件按左键时回到当前激活的导航项
+        val navs = listOf(binding.navSource, binding.navPlay, binding.navDisplay, binding.navAbout)
+
+        // 为右侧 panel 中每个配置组的可获焦控件设置 nextFocusLeft 指向对应导航项
+        // groupSource 对应 navSource 的控件
+        setRightPanelLeftFocus(binding.groupSource, binding.navSource, navs)
+        setRightPanelLeftFocus(binding.groupPlay, binding.navPlay, navs)
+        setRightPanelLeftFocus(binding.groupDisplay, binding.navDisplay, navs)
+        setRightPanelLeftFocus(binding.groupAbout, binding.navAbout, navs)
+
+        // 导航项 nextFocusRight 指回右侧对应组的第一个可获焦控件
+        for ((nav, group) in navToGroup) {
+            nav.nextFocusRightId = findFirstFocusableIn(group)
+        }
+    }
+
+    /** 将容器内所有可获焦 View 的 nextFocusLeft 设为对应导航项 */
+    private fun setRightPanelLeftFocus(container: View, nav: View, navs: List<View>) {
+        collectFocusables(container) { focusable ->
+            focusable.nextFocusLeftId = nav.id
+        }
+    }
+
+    /** 遍历容器内所有可获焦控件 */
+    private fun collectFocusables(view: View, found: (View) -> Unit) {
+        if (view.isFocusable) {
+            found(view)
+        }
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                collectFocusables(view.getChildAt(i), found)
+            }
+        }
+    }
+
+    /** 找到容器内第一个可获焦的控件 id */
+    private fun findFirstFocusableIn(container: View): Int {
+        val result = intArrayOf(View.NO_ID)
+        collectFocusables(container) { v ->
+            if (result[0] == View.NO_ID) {
+                result[0] = v.id
+            }
+        }
+        return result[0]
     }
 
     private fun showGroup(
@@ -260,7 +297,6 @@ class SettingFragment : Fragment() {
             imageHelper.clearImage()
 
             SP.softDecode = SP.DEFAULT_SOFT_DECODE
-            SP.glassBlur = SP.DEFAULT_GLASS_BLUR
 
             SP.configUrl = SP.DEFAULT_CONFIG_URL
             Log.i(TAG, "config url: ${SP.configUrl}")
@@ -322,6 +358,7 @@ class SettingFragment : Fragment() {
         }
 
         binding.navSource.requestFocus()
+        activeNav = binding.navSource
     }
 
     private fun syncRemoteServerText() {
@@ -344,7 +381,6 @@ class SettingFragment : Fragment() {
         binding.switchCompactMenu.isChecked = SP.compactMenu
         binding.switchSoftDecode.isChecked = SP.softDecode
         binding.switchElderMode.isChecked = SP.elderMode
-        binding.switchGlassBlur.isChecked = SP.glassBlur
     }
 
     private fun confirmConfig() {
@@ -389,7 +425,7 @@ class SettingFragment : Fragment() {
             binding.configUrlText.text = SP.configUrl ?: ""
             syncRemoteServerText()
             FocusFx.panelIn(binding.settingPanel)
-            binding.navSource.requestFocus()
+            (activeNav ?: binding.navSource).requestFocus()
         }
     }
 

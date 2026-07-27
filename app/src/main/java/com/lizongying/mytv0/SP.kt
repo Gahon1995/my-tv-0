@@ -62,8 +62,6 @@ object SP {
 
     private const val KEY_ELDER_MODE = "elder_mode"
 
-    private const val KEY_GLASS_BLUR = "glass_blur"
-
     // 远端配置中心（my-tv-server）地址；为空表示不使用远端配置
     private const val KEY_REMOTE_CONFIG_SERVER = "remote_config_server"
 
@@ -79,7 +77,7 @@ object SP {
 
     const val DEFAULT_CHANNEL_REVERSAL = true
     const val DEFAULT_CHANNEL_NUM = false
-    const val DEFAULT_TIME = true
+    const val DEFAULT_TIME = false
     const val DEFAULT_BOOT_STARTUP = false
     const val DEFAULT_CONFIG_URL = "https://tvsources.p.gahon.top/fmml_ipv6.m3u"
     const val DEFAULT_PROXY = ""
@@ -91,8 +89,6 @@ object SP {
     const val DEFAULT_LOG_TIMES = 10
     const val DEFAULT_SOFT_DECODE = false
     const val DEFAULT_ELDER_MODE = false
-
-    const val DEFAULT_GLASS_BLUR = true
 
     // 0 favorite; 1 all
     const val DEFAULT_POSITION_GROUP = 1
@@ -203,10 +199,6 @@ object SP {
     var elderMode: Boolean
         get() = sp.getBoolean(KEY_ELDER_MODE, DEFAULT_ELDER_MODE)
         set(value) = sp.edit().putBoolean(KEY_ELDER_MODE, value).apply()
-
-    var glassBlur: Boolean
-        get() = sp.getBoolean(KEY_GLASS_BLUR, DEFAULT_GLASS_BLUR)
-        set(value) = sp.edit().putBoolean(KEY_GLASS_BLUR, value).apply()
 
     fun getLike(id: Int): Boolean {
         val stringSet = sp.getStringSet(KEY_LIKE, emptySet())

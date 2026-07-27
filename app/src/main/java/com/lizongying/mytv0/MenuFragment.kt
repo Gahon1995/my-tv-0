@@ -285,13 +285,15 @@ class MenuFragment : Fragment(), GroupAdapter.ItemListener, ListAdapter.ItemList
 //                groupAdapter.focusable(false)
 //                listAdapter.focusable(true)
 
-                if (viewModel.groupModel.positionPlayingValue == viewModel.groupModel.positionValue) {
-                    viewModel.groupModel.getCurrentList()?.let {
-                        listAdapter.toPosition(it.positionPlayingValue)
-                    }
+                // 如果当前分组就是正在播放的分组，回到上次播放的位置；否则定位到第二项（跳过收藏），至少不是顶部
+                val target = if (viewModel.groupModel.positionPlayingValue == viewModel.groupModel.positionValue) {
+                    viewModel.groupModel.getCurrentList()?.let { it.positionPlayingValue } ?: 0
                 } else {
-                    listAdapter.toPosition(0)
+                    viewModel.groupModel.getCurrentList()?.let { list ->
+                        if (list.size() > 2) 2 else 0
+                    } ?: 0
                 }
+                listAdapter.toPosition(target)
 
                 return true
             }

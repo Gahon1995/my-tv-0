@@ -248,11 +248,6 @@
                             android:text="@string/setting_nav_display" />
 
                         <androidx.appcompat.widget.SwitchCompat
-                            android:id="@+id/switch_glass_blur"
-                            style="@style/SettingSwitch"
-                            android:text="@string/glass_effect" />
-
-                        <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/switch_elder_mode"
                             style="@style/SettingSwitch"
                             android:text="@string/elder_mode" />
@@ -308,11 +303,6 @@
                             android:id="@+id/clear"
                             style="@style/SettingButton"
                             android:text="@string/clear" />
-
-                        <androidx.appcompat.widget.AppCompatButton
-                            android:id="@+id/appreciate"
-                            style="@style/SettingButton"
-                            android:text="@string/appreciate" />
 
                         <androidx.appcompat.widget.AppCompatButton
                             android:id="@+id/exit"
