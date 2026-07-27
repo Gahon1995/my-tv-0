@@ -1,6 +1,7 @@
 package com.lizongying.mytv0.view
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Outline
 import android.graphics.Paint
@@ -15,9 +16,8 @@ import com.lizongying.mytv0.R
 /**
  * 液态玻璃面板容器（遮罩方案）。
  *
- * 由深色半透明底 + 玻璃渐变高光 + 描边构成，全部在 onDraw 绘制，
- * 不参与布局测量（wrap_content 面板尺寸完全跟随内容）。
- * 已移除视频抓帧模糊（对低端设备播放有干扰）。
+ * 由深色半透明底 + 玻璃渐变高光 + 描边构成。
+ * 背景在尺寸变化时缓存为 bitmap，减少 onDraw 开销。
  */
 class GlassPanelLayout @JvmOverloads constructor(
     context: Context,
@@ -27,8 +27,11 @@ class GlassPanelLayout @JvmOverloads constructor(
 
     private var radiusPx: Float
     private val overlayDrawable: Drawable
-
     private val basePaint = Paint()
+
+    private var lastW = -1
+    private var lastH = -1
+    private var cachedBg: Bitmap? = null
 
     init {
         val ta = context.obtainStyledAttributes(attrs, R.styleable.GlassPanelLayout)
@@ -42,7 +45,7 @@ class GlassPanelLayout @JvmOverloads constructor(
         )
         basePaint.color = ta.getColor(
             R.styleable.GlassPanelLayout_glassBaseColor,
-            0xCC10161F.toInt() // 默认 80% 深底，保证文字可读
+            0xCC10161F.toInt()
         )
         ta.recycle()
 
@@ -50,8 +53,6 @@ class GlassPanelLayout @JvmOverloads constructor(
 
         setWillNotDraw(false)
 
-        // 圆角通过 ViewOutlineProvider 提供 elevation shadow，不 clip children
-        // （避免裁剪导航高亮背景、列表文字等）
         outlineProvider = object : ViewOutlineProvider() {
             override fun getOutline(view: View, outline: Outline) {
                 outline.setRoundRect(0, 0, view.width, view.height, radiusPx)
@@ -61,7 +62,17 @@ class GlassPanelLayout @JvmOverloads constructor(
 
     fun setGlassRadius(px: Float) {
         radiusPx = px
+        cachedBg?.recycle()
+        cachedBg = null
         invalidateOutline()
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        cachedBg?.recycle()
+        cachedBg = null
+        lastW = w
+        lastH = h
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -70,11 +81,24 @@ class GlassPanelLayout @JvmOverloads constructor(
         val h = height
         if (w == 0 || h == 0) return
 
-        // 圆角深色底
-        canvas.drawRoundRect(0f, 0f, w.toFloat(), h.toFloat(), radiusPx, radiusPx, basePaint)
+        var bg = cachedBg
+        if (bg == null || bg.isRecycled || lastW != w || lastH != h) {
+            bg = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+            val bgCanvas = Canvas(bg)
+            bgCanvas.drawRoundRect(0f, 0f, w.toFloat(), h.toFloat(), radiusPx, radiusPx, basePaint)
+            overlayDrawable.setBounds(0, 0, w, h)
+            overlayDrawable.draw(bgCanvas)
+            cachedBg = bg
+            lastW = w
+            lastH = h
+        }
 
-        // 玻璃渐变 + 描边
-        overlayDrawable.setBounds(0, 0, w, h)
-        overlayDrawable.draw(canvas)
+        canvas.drawBitmap(bg, 0f, 0f, null)
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        cachedBg?.recycle()
+        cachedBg = null
     }
 }
