@@ -444,7 +444,7 @@ class PlayerFragment : Fragment() {
         // 此时自动 nextVideo 尝试下一条线路
         while (true) {
             val last = tvModel.isLastVideo()
-            tvModel.getVideoUrl() ?: run {
+            if (tvModel.getVideoUrl() == null) {
                 if (last) {
                     tvModel.setErrInfo(R.string.play_error.getString())
                     return
