@@ -40,6 +40,9 @@ class SettingFragment : Fragment() {
     /** 当前激活的左侧导航项，用于右侧面板控件 nextFocusLeft 回指 */
     private var activeNav: View? = null
 
+    /** 每组右侧面板最后焦点位置（viewId -> last focused view） */
+    private val groupLastFocus = mutableMapOf<Int, Int>()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -207,26 +210,69 @@ class SettingFragment : Fragment() {
             }
         }
 
-        // 右侧面板中所有可获焦控件按左键时回到当前激活的导航项
-        val navs = listOf(binding.navSource, binding.navPlay, binding.navDisplay, binding.navAbout)
-
-        // 为右侧 panel 中每个配置组的可获焦控件设置 nextFocusLeft 指向对应导航项
-        // groupSource 对应 navSource 的控件
-        setRightPanelLeftFocus(binding.groupSource, binding.navSource, navs)
-        setRightPanelLeftFocus(binding.groupPlay, binding.navPlay, navs)
-        setRightPanelLeftFocus(binding.groupDisplay, binding.navDisplay, navs)
-        setRightPanelLeftFocus(binding.groupAbout, binding.navAbout, navs)
-
-        // 导航项 nextFocusRight 指回右侧对应组的第一个可获焦控件
+        // 初始化每组第一个可获焦控件 id
         for ((nav, group) in navToGroup) {
-            nav.nextFocusRightId = findFirstFocusableIn(group)
+            groupLastFocus[nav.id] = findFirstFocusableIn(group)
+        }
+
+        // 右侧面板中每个可获焦控件的 nextFocusLeft 指向对应导航项
+        setRightPanelLeftFocus(binding.groupSource, binding.navSource)
+        setRightPanelLeftFocus(binding.groupPlay, binding.navPlay)
+        setRightPanelLeftFocus(binding.groupDisplay, binding.navDisplay)
+        setRightPanelLeftFocus(binding.groupAbout, binding.navAbout)
+
+        for ((nav, group) in navToGroup) {
+            nav.setOnFocusChangeListener { v, hasFocus ->
+                FocusFx.apply(v, hasFocus)
+                if (hasFocus) {
+                    activeNav = v
+                    showGroup(navToGroup, group)
+                    // 恢复该组上次焦点位置
+                    groupLastFocus[v.id]?.let { id ->
+                        if (id != View.NO_ID) {
+                            v.nextFocusRightId = id
+                        }
+                    }
+                    nav.setTextColor(
+                        ContextCompat.getColor(requireContext(), R.color.text_primary)
+                    )
+                } else {
+                    nav.setTextColor(
+                        ContextCompat.getColor(requireContext(), R.color.text_tertiary)
+                    )
+                }
+                (activity as MainActivity).settingActive()
+            }
+            nav.setOnClickListener {
+                activeNav = nav
+                showGroup(navToGroup, group)
+            }
+        }
+
+        // 追踪右侧面板焦点变化，记录每组的上次焦点
+        for ((nav, group) in navToGroup) {
+            trackGroupFocus(group, nav)
         }
     }
 
     /** 将容器内所有可获焦 View 的 nextFocusLeft 设为对应导航项 */
-    private fun setRightPanelLeftFocus(container: View, nav: View, navs: List<View>) {
+    private fun setRightPanelLeftFocus(container: View, nav: View) {
         collectFocusables(container) { focusable ->
             focusable.nextFocusLeftId = nav.id
+        }
+    }
+
+    /** 追踪容器内焦点变化，记录每组上次焦点位置 */
+    private fun trackGroupFocus(group: View, nav: View) {
+        collectFocusables(group) { focusable ->
+            // 使用 ViewTreeObserver 在布局完成后追加焦点监听（不覆盖已有 listener）
+            val existingListener = focusable.onFocusChangeListener
+            focusable.onFocusChangeListener = View.OnFocusChangeListener { v, hasFocus ->
+                if (hasFocus) {
+                    groupLastFocus[nav.id] = v.id
+                }
+                existingListener?.onFocusChange(v, hasFocus)
+            }
         }
     }
 
