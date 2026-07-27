@@ -41,8 +41,4 @@
     <color name="track_unchecked">#33FFFFFF</color>
     <color name="thumb_checked">#5AC8FA</color>
     <color name="thumb_unchecked">#FFEEEEEE</color>
-
-    <!-- ===== 开关 SwitchCompat ===== -->
-    <color name="switch_thumb_color">#5AC8FA</color>
-    <color name="switch_track_color">#595AC8FA</color>
 </resources>
