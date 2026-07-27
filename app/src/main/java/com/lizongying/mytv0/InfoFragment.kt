@@ -98,7 +98,8 @@ class InfoFragment : Fragment() {
         view?.visibility = View.VISIBLE
         _binding?.let { FocusFx.panelIn(it.info) }
         handler.postDelayed(removeRunnable, delay)
-        handler.postDelayed(progressRunnable, progressInterval)
+        // 立即开始进度更新循环（30s 间隔），避免换台后进度条滞后
+        handler.post(progressRunnable)
     }
 
     /** 当前节目 + 时段 + 接下来 + 进度条 */

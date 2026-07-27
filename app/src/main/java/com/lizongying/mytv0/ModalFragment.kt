@@ -21,7 +21,7 @@ class ModalFragment : DialogFragment() {
     private val binding get() = _binding!!
 
     private val handler = Handler(Looper.myLooper()!!)
-    private val delayHideAppreciateModal = 10000L
+    private val delayHideModal = 10000L
 
     override fun onStart() {
         super.onStart()
@@ -59,7 +59,7 @@ class ModalFragment : DialogFragment() {
                     try {
                         val mainActivity = (activity as MainActivity)
                         mainActivity.showWebViewPopup(u)
-                        handler.postDelayed(hideAppreciateModal, 0)
+                        handler.postDelayed(hideModal, 0)
                     } catch (e: Exception) {
                         Log.e(TAG, "onViewCreated", e)
                     }
@@ -72,10 +72,10 @@ class ModalFragment : DialogFragment() {
             binding.modalText.visibility = View.GONE
         }
 
-        handler.postDelayed(hideAppreciateModal, delayHideAppreciateModal)
+        handler.postDelayed(hideModal, delayHideModal)
     }
 
-    private val hideAppreciateModal = Runnable {
+    private val hideModal = Runnable {
         if (!this.isHidden) {
             this.dismiss()
         }
