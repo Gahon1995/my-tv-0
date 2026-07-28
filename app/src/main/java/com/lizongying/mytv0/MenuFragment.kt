@@ -59,6 +59,7 @@ class MenuFragment : Fragment(), GroupAdapter.ItemListener, ListAdapter.ItemList
         binding.group.adapter = groupAdapter
         binding.group.layoutManager =
             LinearLayoutManager(context)
+        binding.group.setItemAnimator(null)
         groupWidth = application.px2Px(binding.group.layoutParams.width)
         binding.group.layoutParams.width = if (SP.compactMenu) {
             groupWidth * 2 / 3
@@ -75,6 +76,7 @@ class MenuFragment : Fragment(), GroupAdapter.ItemListener, ListAdapter.ItemList
         binding.list.adapter = listAdapter
         binding.list.layoutManager =
             LinearLayoutManager(context)
+        binding.list.setItemAnimator(null)
         listWidth = application.px2Px(binding.list.layoutParams.width)
         binding.list.layoutParams.width = if (SP.compactMenu) {
             listWidth * 4 / 5

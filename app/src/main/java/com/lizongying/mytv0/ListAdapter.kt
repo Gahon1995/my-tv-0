@@ -211,6 +211,12 @@ class ListAdapter(
         }
     }
 
+    override fun onViewRecycled(holder: ViewHolder) {
+        super.onViewRecycled(holder)
+        // 回收时取消 Glide 加载，避免 ViewHolder 复用时旧请求写入新 item
+        com.bumptech.glide.Glide.with(context).clear(holder.binding.icon)
+    }
+
     interface ItemListener {
         fun onItemFocusChange(tvModel: TVModel, hasFocus: Boolean)
         fun onItemClicked(position: Int, type: String = "list")
@@ -307,9 +313,14 @@ class ListAdapter(
         }
 
         override fun areContentsTheSame(oldItem: TVModel, newItem: TVModel): Boolean {
-            return oldItem.tv == newItem.tv &&
+            // 只比较会改变 UI 的字段，跳过 uris/headers/child 等大字段
+            return oldItem.tv.title == newItem.tv.title &&
+                    oldItem.tv.name == newItem.tv.name &&
+                    oldItem.tv.number == newItem.tv.number &&
+                    oldItem.tv.logo == newItem.tv.logo &&
                     oldItem.like.value == newItem.like.value &&
-                    oldItem.epgNowTitle == newItem.epgNowTitle
+                    oldItem.epgNowTitle == newItem.epgNowTitle &&
+                    oldItem.tv.group == newItem.tv.group
         }
     }
 

@@ -237,7 +237,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 是否已经播放过第一个频道（用于判断是否是首次起播，首次需要 loading）
     private var hasPlayedOnce = false
 
     private fun watch() {
@@ -252,7 +251,6 @@ class MainActivity : AppCompatActivity() {
                 if (tvModel.errInfo.value != null
 //                    && tvModel.tv.id == TVList.positionValue
                 ) {
-                    hideFragment(loadingFragment)
                     if (tvModel.errInfo.value == "") {
                         Log.i(TAG, "${tvModel.tv.title} playing")
                         hideFragment(errorFragment)
@@ -274,12 +272,7 @@ class MainActivity : AppCompatActivity() {
                 ) {
                     Log.i(TAG, "${tvModel.tv.title} 嘗試播放")
                     hideFragment(errorFragment)
-                    // 首次起播显示 loading（没有上一帧画面可保留），
-                    // 换台时保留当前画面，不盖 loading，让新流直接在后台缓冲切换
-                    if (!hasPlayedOnce) {
-                        showFragment(loadingFragment)
-                        hasPlayedOnce = true
-                    }
+                    hasPlayedOnce = true
                     playerFragment.play(tvModel)
                     infoFragment.show(tvModel)
                     if (SP.channelNum) {
