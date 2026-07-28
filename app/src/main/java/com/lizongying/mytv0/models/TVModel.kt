@@ -69,6 +69,19 @@ class TVModel(var tv: TV) : ViewModel() {
 
     fun setEpg(epg: List<EPG>) {
         _epg.value = epg
+        // 同时更新当前节目缓存
+        _epgNowTitle = computeEpgNow(epg)
+    }
+
+    // 缓存当前 EPG 节目标题，避免 RecyclerView 绑定时重复遍历
+    private var _epgNowTitle: String? = null
+    val epgNowTitle: String?
+        get() = _epgNowTitle
+
+    private fun computeEpgNow(epg: List<EPG>): String? {
+        if (epg.isEmpty()) return null
+        val now = System.currentTimeMillis() / 1000
+        return epg.firstOrNull { it.beginTime <= now && it.endTime > now }?.title
     }
 
     // ===== 回看/时移状态 =====

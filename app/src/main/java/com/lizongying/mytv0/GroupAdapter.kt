@@ -9,7 +9,9 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.view.marginBottom
 import androidx.core.view.marginStart
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.ListAdapter as RVListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.lizongying.mytv0.databinding.GroupItemBinding
 import com.lizongying.mytv0.models.TVGroupModel
@@ -21,8 +23,7 @@ class GroupAdapter(
     private val context: Context,
     private val recyclerView: RecyclerView,
     private var tvGroupModel: TVGroupModel,
-) :
-    RecyclerView.Adapter<GroupAdapter.ViewHolder>() {
+) : RVListAdapter<TVListModel, GroupAdapter.ViewHolder>(DiffCallback) {
 
     private var listener: ItemListener? = null
     private var focused: View? = null
@@ -34,6 +35,10 @@ class GroupAdapter(
     private var first = true
 
     val application = context.applicationContext as MyTVApplication
+
+    fun submitNewList(models: List<TVListModel>) {
+        submitList(models.toList())
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val inflater = LayoutInflater.from(context)
@@ -67,7 +72,7 @@ class GroupAdapter(
     }
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
-        val listTVModel = tvGroupModel.getTVListModel(position) ?: return
+        val listTVModel = getItem(position)
         val view = viewHolder.itemView
 
         if (!defaultFocused && position == defaultFocus) {
@@ -86,19 +91,6 @@ class GroupAdapter(
                 if (p != tvGroupModel.positionValue) {
                     tvGroupModel.setPosition(p)
                 }
-
-//                if (visible) {
-//
-//                    // "position" should not be used here, as the "list" may have been filtered out.
-//                    val p = listTVModel.getGroupIndex()
-//                    Log.e(TAG, "group getGroupIndex $p")
-//                    Log.e(TAG, "group positionValue ${tvGroupModel.positionValue}")
-//                    if (p != tvGroupModel.positionValue) {
-//                        tvGroupModel.setPosition(p)
-//                    }
-//                } else {
-//                    visible = true
-//                }
             } else {
                 viewHolder.focus(false, isCurrent(position))
             }
@@ -113,7 +105,7 @@ class GroupAdapter(
         view.setOnKeyListener { _, keyCode, event: KeyEvent? ->
             if (event?.action == KeyEvent.ACTION_UP) {
                 recyclerView.postDelayed({
-                    val oldLikeMode = tvGroupModel.isInLikeMode;
+                    val oldLikeMode = tvGroupModel.isInLikeMode
                     tvGroupModel.isInLikeMode = position == 0
                     if (tvGroupModel.isInLikeMode) {
 //                        R.string.favorite_mode.showToast()
@@ -126,7 +118,7 @@ class GroupAdapter(
 
                 // If it is already the first item and you continue to move up...
                 if (keyCode == KeyEvent.KEYCODE_DPAD_UP && position == 0) {
-                    val p = getItemCount() - 1
+                    val p = itemCount - 1
 
                     (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
                         p,
@@ -141,7 +133,7 @@ class GroupAdapter(
                 }
 
                 // If it is the last item and you continue to move down...
-                if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && position == getItemCount() - 1) {
+                if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && position == itemCount - 1) {
                     val p = 0
 
                     (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
@@ -174,8 +166,6 @@ class GroupAdapter(
         }
         return position == groupPosition
     }
-
-    override fun getItemCount() = tvGroupModel.size()
 
     class ViewHolder(private val context: Context, private val binding: GroupItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -244,8 +234,17 @@ class GroupAdapter(
     }
 
     fun changed() {
-        recyclerView.post {
-            notifyDataSetChanged()
+        submitNewList(tvGroupModel.tvGroup.value ?: emptyList())
+    }
+
+    object DiffCallback : DiffUtil.ItemCallback<TVListModel>() {
+        override fun areItemsTheSame(oldItem: TVListModel, newItem: TVListModel): Boolean {
+            return oldItem.getName() == newItem.getName()
+        }
+
+        override fun areContentsTheSame(oldItem: TVListModel, newItem: TVListModel): Boolean {
+            return oldItem.getName() == newItem.getName() &&
+                    oldItem.size() == newItem.size()
         }
     }
 
@@ -253,4 +252,3 @@ class GroupAdapter(
         private const val TAG = "GroupAdapter"
     }
 }
-

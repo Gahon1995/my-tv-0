@@ -232,7 +232,8 @@ class MainActivity : AppCompatActivity() {
 
             registerNetworkCallback()
 
-            viewModel.updateConfig()
+            // updateConfig 已移至 MainViewModel.init() 延迟执行，
+            // 避免远程拉取阻塞初始起播
         }
     }
 

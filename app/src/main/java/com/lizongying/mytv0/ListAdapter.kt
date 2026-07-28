@@ -11,7 +11,9 @@ import android.view.ViewGroup.FOCUS_BEFORE_DESCENDANTS
 import android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
 import androidx.core.content.ContextCompat
 import androidx.core.view.setPadding
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.ListAdapter as RVListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.lizongying.mytv0.databinding.ListItemBinding
 import com.lizongying.mytv0.models.TVListModel
@@ -19,12 +21,18 @@ import com.lizongying.mytv0.models.TVModel
 import com.lizongying.mytv0.view.FocusFx
 
 
+/**
+ * 频道列表适配器。
+ *
+ * 使用 [RVListAdapter] + [DiffUtil] 增量更新，替代旧版手动 notifyDataSetChanged，
+ * 大幅减少滚动时的 ViewHolder rebind。
+ */
 class ListAdapter(
     private val context: Context,
     private val recyclerView: RecyclerView,
     private var listTVModel: TVListModel?,
-) :
-    RecyclerView.Adapter<ListAdapter.ViewHolder>() {
+) : RVListAdapter<TVModel, ListAdapter.ViewHolder>(DiffCallback) {
+
     private var listener: ItemListener? = null
     private var focused: View? = null
     private var defaultFocused = false
@@ -33,6 +41,11 @@ class ListAdapter(
     var visible = false
 
     val application = context.applicationContext as MyTVApplication
+
+    /** 供外部 diff 更新使用 */
+    fun submitNewList(models: List<TVModel>) {
+        submitList(models.toList())
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val inflater = LayoutInflater.from(context)
@@ -65,9 +78,7 @@ class ListAdapter(
 
     fun update(listTVModel: TVListModel) {
         this.listTVModel = listTVModel
-        recyclerView.post {
-            notifyDataSetChanged()
-        }
+        submitNewList(listTVModel.tvList.value ?: emptyList())
     }
 
     fun clear() {
@@ -76,127 +87,140 @@ class ListAdapter(
     }
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
-        listTVModel?.let {
-            // peek 不改写列表当前 position，避免滚动绑定时状态被破坏
-            val tvModel = it.peekTVModel(position) ?: return
-            val view = viewHolder.itemView
+        val tvModel = getItem(position)
+        val view = viewHolder.itemView
 
-            view.isFocusable = true
-            view.isFocusableInTouchMode = true
+        view.isFocusable = true
+        view.isFocusableInTouchMode = true
 
-            viewHolder.like(tvModel.like.value as Boolean)
+        viewHolder.bind(tvModel)
 
-            viewHolder.binding.heart.setOnClickListener {
-                tvModel.setLike(!(tvModel.like.value as Boolean))
-                viewHolder.like(tvModel.like.value as Boolean)
-            }
+        if (!defaultFocused && position == defaultFocus) {
+            view.requestFocus()
+            defaultFocused = true
+        }
 
-            if (!defaultFocused && position == defaultFocus) {
-                view.requestFocus()
-                defaultFocused = true
-            }
+        val onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
+            listener?.onItemFocusChange(tvModel, hasFocus)
 
-            val onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
-                listener?.onItemFocusChange(tvModel, hasFocus)
-
-                if (hasFocus) {
-                    viewHolder.focus(true)
-                    focused = view
-                    if (visible) {
-                        if (position != it.positionValue) {
-                            it.setPosition(position)
-                        }
-                    } else {
-                        visible = true
+            if (hasFocus) {
+                viewHolder.focus(true)
+                focused = view
+                if (visible) {
+                    if (position != listTVModel?.positionValue) {
+                        listTVModel?.setPosition(position)
                     }
                 } else {
-                    viewHolder.focus(false)
+                    visible = true
                 }
+            } else {
+                viewHolder.focus(false)
             }
+        }
 
-            view.onFocusChangeListener = onFocusChangeListener
+        view.onFocusChangeListener = onFocusChangeListener
 
-            view.setOnClickListener { _ ->
-                listener?.onItemClicked(position)
-            }
+        view.setOnClickListener { _ ->
+            listener?.onItemClicked(position)
+        }
 
-            view.setOnTouchListener(object : View.OnTouchListener {
-                override fun onTouch(
-                    v: View?,
-                    event: MotionEvent?
-                ): Boolean {
-                    v ?: return false
-                    event ?: return false
+        view.setOnTouchListener(object : View.OnTouchListener {
+            override fun onTouch(
+                v: View?,
+                event: MotionEvent?
+            ): Boolean {
+                v ?: return false
+                event ?: return false
 
-                    when (event.action) {
-                        MotionEvent.ACTION_UP -> {
-                            v.performClick()
-                            return true
-                        }
+                when (event.action) {
+                    MotionEvent.ACTION_UP -> {
+                        v.performClick()
+                        return true
                     }
-
-                    return false
                 }
-            })
 
-            view.setOnKeyListener { _, keyCode, event: KeyEvent? ->
-                if (event?.action == KeyEvent.ACTION_DOWN) {
-                    if (keyCode == KeyEvent.KEYCODE_DPAD_UP && position == 0) {
-                        val p = getItemCount() - 1
+                return false
+            }
+        })
 
-                        (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
-                            p,
-                            0
-                        )
+        // 监听器在 onBindViewHolder 设置是合理的——RecyclerView 复用时 ViewHolder 不变但数据变了，
+        // 必须重新绑定回调引用的数据（tvModel）。Lambda 捕获的 tvModel 是每次 bind 的当前项。
+        view.setOnKeyListener { _, keyCode, event: KeyEvent? ->
+            if (event?.action == KeyEvent.ACTION_DOWN) {
+                if (keyCode == KeyEvent.KEYCODE_DPAD_UP && position == 0) {
+                    val p = itemCount - 1
 
-                        recyclerView.postDelayed({
-                            val v = recyclerView.findViewHolderForAdapterPosition(p)
-                            v?.itemView?.isSelected = true
-                            v?.itemView?.requestFocus()
-                        }, 0)
-                    }
+                    (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
+                        p,
+                        0
+                    )
 
-                    if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && position == getItemCount() - 1) {
-                        val p = 0
-
-                        (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
-                            p,
-                            0
-                        )
-
-                        recyclerView.postDelayed({
-                            val v = recyclerView.findViewHolderForAdapterPosition(p)
-                            v?.itemView?.isSelected = true
-                            v?.itemView?.requestFocus()
-                        }, 0)
-                    }
-
-                    if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                        // 右键：展开该频道节目单（收藏改为长按 OK）
-                        return@setOnKeyListener listener?.onShowEpg(tvModel) == true
-                    }
-
-                    return@setOnKeyListener listener?.onKey(this, keyCode) == true
+                    recyclerView.postDelayed({
+                        val v = recyclerView.findViewHolderForAdapterPosition(p)
+                        v?.itemView?.isSelected = true
+                        v?.itemView?.requestFocus()
+                    }, 0)
                 }
-                false
+
+                if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && position == itemCount - 1) {
+                    val p = 0
+
+                    (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
+                        p,
+                        0
+                    )
+
+                    recyclerView.postDelayed({
+                        val v = recyclerView.findViewHolderForAdapterPosition(p)
+                        v?.itemView?.isSelected = true
+                        v?.itemView?.requestFocus()
+                    }, 0)
+                }
+
+                if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                    // 右键：展开该频道节目单（收藏改为长按 OK）
+                    return@setOnKeyListener listener?.onShowEpg(tvModel) == true
+                }
+
+                return@setOnKeyListener listener?.onKey(this, keyCode) == true
             }
+            false
+        }
 
-            // 长按 OK：收藏/取消收藏
-            view.setOnLongClickListener {
-                tvModel.setLike(!(tvModel.like.value as Boolean))
-                viewHolder.like(tvModel.like.value as Boolean)
-                true
-            }
-
-            viewHolder.bindTitle(tvModel.tv.title)
-            viewHolder.bindNum(tvModel)
-            viewHolder.bindEpgNow(tvModel)
-
-            viewHolder.bindImage(tvModel)
+        // 长按 OK：收藏/取消收藏
+        view.setOnLongClickListener {
+            tvModel.setLike(!(tvModel.like.value as Boolean))
+            viewHolder.like(tvModel.like.value as Boolean)
+            true
         }
     }
 
-    override fun getItemCount() = listTVModel?.size() ?: 0
+    fun toPosition(position: Int) {
+        Log.i(TAG, "position $position")
+        recyclerView.post {
+            (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
+                position,
+                0
+            )
+
+            recyclerView.postDelayed({
+                val viewHolder = recyclerView.findViewHolderForAdapterPosition(position)
+                viewHolder?.itemView?.isSelected = true
+                viewHolder?.itemView?.requestFocus()
+            }, 0)
+        }
+    }
+
+    interface ItemListener {
+        fun onItemFocusChange(tvModel: TVModel, hasFocus: Boolean)
+        fun onItemClicked(position: Int, type: String = "list")
+        fun onKey(listAdapter: ListAdapter, keyCode: Int): Boolean
+        fun onShowEpg(tvModel: TVModel): Boolean
+    }
+
+    fun setItemListener(listener: ItemListener) {
+        this.listener = listener
+    }
 
     class ViewHolder(private val context: Context, val binding: ListItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -204,31 +228,38 @@ class ListAdapter(
         val application = context.applicationContext as MyTVApplication
         val imageHelper = application.imageHelper
 
-
-        fun bindTitle(text: String) {
-            binding.title.text = text
-        }
-
-        fun bindNum(tvModel: TVModel) {
+        /** 绑定数据——尽量轻量，不做重复 Glide 解码 */
+        fun bind(tvModel: TVModel) {
             val tv = tvModel.tv
+
+            binding.title.text = tv.title
+
+            // 频道号
             val channelNum = if (tv.number == -1) tv.id.plus(1) else tv.number
             binding.num.text = channelNum.toString()
-        }
 
-        fun bindEpgNow(tvModel: TVModel) {
-            val now = Utils.getDateTimestamp()
-            val current = tvModel.epg.value?.firstOrNull {
-                it.beginTime <= now && it.endTime > now
-            }
-            if (current != null) {
-                binding.epgNow.text = current.title
+            // EPG 当前节目（TVModel 层已缓存结果，无需每次遍历）
+            val nowTitle = tvModel.epgNowTitle
+            if (nowTitle != null) {
+                binding.epgNow.text = nowTitle
                 binding.epgNow.visibility = View.VISIBLE
             } else {
                 binding.epgNow.visibility = View.GONE
             }
+
+            // 收藏状态
+            val liked = tvModel.like.value as? Boolean ?: false
+            like(liked)
+
+            // 台标（用 PlaceholderLogo + key 避免重复 Glide 解码）
+            bindImage(tvModel)
+
+            // 焦点态重置（由 onBindViewHolder 里的 onFocusChangeListener 管理）
+            binding.title.setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+            binding.epgNow.setTextColor(ContextCompat.getColor(context, R.color.text_dim))
         }
 
-        fun bindImage(tvModel: TVModel) {
+        private fun bindImage(tvModel: TVModel) {
             val tv = tvModel.tv
 
             val channelNum = if (tv.number == -1) tv.id.plus(1) else tv.number
@@ -270,35 +301,19 @@ class ListAdapter(
         }
     }
 
-    fun toPosition(position: Int) {
-        Log.i(TAG, "position $position")
-        recyclerView.post {
-            (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
-                position,
-                0
-            )
-
-            recyclerView.postDelayed({
-                val viewHolder = recyclerView.findViewHolderForAdapterPosition(position)
-                viewHolder?.itemView?.isSelected = true
-                viewHolder?.itemView?.requestFocus()
-            }, 0)
+    object DiffCallback : DiffUtil.ItemCallback<TVModel>() {
+        override fun areItemsTheSame(oldItem: TVModel, newItem: TVModel): Boolean {
+            return oldItem.tv.id == newItem.tv.id
         }
-    }
 
-    interface ItemListener {
-        fun onItemFocusChange(tvModel: TVModel, hasFocus: Boolean)
-        fun onItemClicked(position: Int, type: String = "list")
-        fun onKey(listAdapter: ListAdapter, keyCode: Int): Boolean
-        fun onShowEpg(tvModel: TVModel): Boolean
-    }
-
-    fun setItemListener(listener: ItemListener) {
-        this.listener = listener
+        override fun areContentsTheSame(oldItem: TVModel, newItem: TVModel): Boolean {
+            return oldItem.tv == newItem.tv &&
+                    oldItem.like.value == newItem.like.value &&
+                    oldItem.epgNowTitle == newItem.epgNowTitle
+        }
     }
 
     companion object {
         private const val TAG = "ListAdapter"
     }
 }
-

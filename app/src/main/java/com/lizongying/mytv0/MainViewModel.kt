@@ -162,7 +162,14 @@ class MainViewModel : ViewModel() {
 
         initialized = true
 
+        // 通知 UI 层：频道已就绪，可以起播
         _channelsOk.value = true
+
+        // 延迟后异步拉取远端配置与最新直播源，不阻塞初始起播
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(5_000) // 等初始起播稳定后再拉
+            updateConfig()
+        }
     }
 
     suspend fun preloadLogo() {
