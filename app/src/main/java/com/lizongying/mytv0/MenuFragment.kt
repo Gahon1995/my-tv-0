@@ -325,6 +325,13 @@ class MenuFragment : Fragment(), GroupAdapter.ItemListener, ListAdapter.ItemList
 
         _binding?.let { FocusFx.panelIn(it.menuPanel) }
 
+        // 确保分组和频道数据已刷新（首次打开时 group changed observer
+        // 可能已在 MenuFragment 无 view 时触发了空提交）
+        groupAdapter.changed()
+        viewModel.groupModel.getCurrentList()?.let {
+            listAdapter.update(it)
+        }
+
         val position = viewModel.groupModel.positionPlayingValue
         if (position != viewModel.groupModel.positionValue
         ) {

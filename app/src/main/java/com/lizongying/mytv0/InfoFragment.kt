@@ -26,6 +26,9 @@ class InfoFragment : Fragment() {
 
     private var currentTVModel: TVModel? = null
 
+    /** 首次显示用入场动画，后续换台跳过动画避免闪烁 */
+    private var firstShow = true
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -96,7 +99,11 @@ class InfoFragment : Fragment() {
         handler.removeCallbacks(removeRunnable)
         handler.removeCallbacks(progressRunnable)
         view?.visibility = View.VISIBLE
-        _binding?.let { FocusFx.panelIn(it.info) }
+        // 仅首次显示播放入场动画，换台时直接显示避免闪烁
+        if (firstShow) {
+            _binding?.let { FocusFx.panelIn(it.info) }
+            firstShow = false
+        }
         handler.postDelayed(removeRunnable, delay)
         // 立即开始进度更新循环（30s 间隔），避免换台后进度条滞后
         handler.post(progressRunnable)
