@@ -96,7 +96,7 @@ class MainViewModel : ViewModel() {
                 SP.configUrl?.let {
                     if (it.startsWith("http")) {
                         Log.i(TAG, "update config url: $it")
-                        importFromUrl(it)
+                        importFromUrl(it, silent = true)
                         updateEPG()
                     }
                 }
@@ -302,7 +302,7 @@ class MainViewModel : ViewModel() {
         return success
     }
 
-    private suspend fun importFromUrl(url: String, id: String = "") {
+    private suspend fun importFromUrl(url: String, id: String = "", silent: Boolean = false) {
         val urls = getUrls(url).map { Pair(it, url) }
 
         var err = 0
@@ -317,7 +317,7 @@ class MainViewModel : ViewModel() {
                     if (response.isSuccessful) {
                         val str = response.bodyAlias()?.string() ?: ""
                         withContext(Dispatchers.Main) {
-                            tryStr2Channels(str, null, b, id)
+                            tryStr2Channels(str, null, b, id, silent)
                         }
                         err = 0
                         shouldBreak = true
@@ -379,7 +379,7 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun tryStr2Channels(str: String, file: File?, url: String, id: String = "") {
+    fun tryStr2Channels(str: String, file: File?, url: String, id: String = "", silent: Boolean = false) {
         try {
             redirectingToLiveUrl = false
             if (str2Channels(str)) {
@@ -402,17 +402,28 @@ class MainViewModel : ViewModel() {
                         source
                     )
                 }
-                _channelsOk.value = true
-                R.string.channel_import_success.showToast()
+                // 启动后自动更新源时（initialized=true）：不触发 channelsOk 重播，
+                // 避免播放中重建播放器实例导致画面卡顿。
+                // groupModel.setChange() 已刷新频道列表 UI，无需重建播放。
+                if (!initialized) {
+                    _channelsOk.value = true
+                }
+                if (!silent) {
+                    R.string.channel_import_success.showToast()
+                }
                 Log.i(TAG, "channel import success")
             } else {
-                R.string.channel_import_error.showToast()
+                if (!silent) {
+                    R.string.channel_import_error.showToast()
+                }
                 Log.w(TAG, "channel import error")
             }
         } catch (e: Exception) {
             Log.e(TAG, "tryStr2Channels", e)
             file?.deleteOnExit()
-            R.string.channel_read_error.showToast()
+            if (!silent) {
+                R.string.channel_read_error.showToast()
+            }
         }
     }
 
