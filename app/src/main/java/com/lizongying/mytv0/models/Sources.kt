@@ -98,6 +98,7 @@ class Sources {
 
         Log.i(TAG, "sourceId is not exists")
         return false
+    }
 
     fun mergeRemoteSources(uris: List<String>) {
         val missing = uris.filter { uri -> sourcesValue.none { it.uri == uri } }
@@ -108,7 +109,6 @@ class Sources {
         SP.sources = gson.toJson(sourcesValue, typeSourceList) ?: ""
         _changed.value = version
         version++
-    }
     }
 
     fun getSource(idx: Int): Source? {

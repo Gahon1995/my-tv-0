@@ -89,9 +89,7 @@ class UpdateManager(
                     if (release?.version_code!! >= versionCode) {
                         text = "最新版本：${release?.version_name}"
                         release?.changelog?.takeIf { it.isNotBlank() }?.let {
-                            text += "
-
-$it"
+                            text += "\n\n$it"
                         }
                         update = true
                     } else {
