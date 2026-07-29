@@ -278,7 +278,7 @@ class SettingFragment : Fragment() {
         }
 
         updateManager = UpdateManager(context, context.appVersionCode)
-
+        syncRemoteServerText()
         return binding.root
     }
 
@@ -352,6 +352,12 @@ class SettingFragment : Fragment() {
 
             SP.epg = SP.DEFAULT_EPG
             viewModel.updateEPG()
+
+            SP.clearUserOverrides()
+            SP.logoBaseUrl = ""
+            viewModel.updateConfig()
+            syncSwitchStates()
+            syncRemoteServerText()
 
             R.string.config_restored.showToast()
         }
@@ -489,6 +495,24 @@ class SettingFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    private fun syncRemoteServerText() {
+        val server = SP.remoteConfigServer ?: ""
+        binding.remoteConfigServerText.text =
+            server.ifEmpty { getString(R.string.remote_config_server_hint) }
+    }
+
+    private fun syncSwitchStates() {
+        binding.switchChannelReversal.isChecked = SP.channelReversal
+        binding.switchChannelNum.isChecked = SP.channelNum
+        binding.switchTime.isChecked = SP.time
+        binding.switchBootStartup.isChecked = SP.bootStartup
+        binding.switchConfigAutoLoad.isChecked = SP.configAutoLoad
+        binding.switchShowAllChannels.isChecked = SP.showAllChannels
+        binding.switchDefaultLike.isChecked = SP.defaultLike
+        binding.switchDisplaySeconds.isChecked = SP.displaySeconds
+        binding.switchSoftDecode.isChecked = SP.softDecode
     }
 
     companion object {

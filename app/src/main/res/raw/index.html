@@ -176,6 +176,16 @@
 
 <hr/>
 
+<div class="item">
+    <label for="remote-server" id="remote-server-label">遠程配置中心地址（my-tv-server）</label>
+    <div class="container">
+        <input type="text" id="remote-server" placeholder="http://192.168.1.2:8000"/>
+        <input type="button" id="confirm-remote-server" value="確認" class="confirm"/>
+    </div>
+</div>
+
+<hr/>
+
 <div id="messageBox" class="message-box"></div>
 
 <div style="height: 100%"></div>
@@ -247,7 +257,7 @@
         reader.readAsText(file);
     }
 
-    ['#uri', '#plain-text', '#channel', '#epg', '#proxy'].forEach(e => {
+    ['#uri', '#plain-text', '#channel', '#epg', '#proxy', '#remote-server'].forEach(e => {
         const ele = document.querySelector(e);
         ele.addEventListener('focus', () => {
             ele.scrollIntoView({
@@ -349,6 +359,20 @@
         showMessage('已確認', 3000);
     }
 
+    document.querySelector('#confirm-remote-server').onclick = () => {
+        let remoteServer = document.querySelector('#remote-server').value.trim();
+        if (remoteServer && !remoteServer.startsWith('http')) {
+            remoteServer = 'http://' + remoteServer;
+        }
+        if (remoteServer && !isValidUrl(remoteServer)) {
+            alert(`無效的地址${remoteServer}`);
+            return;
+        }
+        document.querySelector('#remote-server').value = remoteServer;
+        save('/api/remote-server', JSON.stringify({ uri: remoteServer }))
+        showMessage('已確認', 3000);
+    }
+
     const save = async (url, body) => {
         const response = await fetch(url, {
             method: 'POST',
@@ -429,6 +453,7 @@
         document.querySelector('#plain-text').value = json.channelText;
         document.querySelector('#epg').value = json.epg;
         document.querySelector('#proxy').value = json.proxy;
+        document.querySelector('#remote-server').value = json.remoteServer || '';
 
         json.history.forEach(v => {
             let htmlString = `<div class="container history"><input type="text" readonly value="${v.uri}" class="source-grey"/><input type="button" value="删除" class="remove" data-source-id="${v.id}"/></div>`;

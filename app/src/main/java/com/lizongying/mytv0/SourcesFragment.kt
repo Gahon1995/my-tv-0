@@ -99,6 +99,7 @@ class SourcesFragment : DialogFragment(), SourcesAdapter.ItemListener {
         viewModel.sources.getSource(position)?.let {
             val uri = Uri.parse(it.uri)
             handler.post {
+                SP.userOverrideConfig = true
                 viewModel.importFromUri(uri)
             }
         }

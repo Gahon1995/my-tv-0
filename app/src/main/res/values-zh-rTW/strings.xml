@@ -51,4 +51,8 @@
     <string name="no_video_source">暫無視頻源</string>
     <string name="soft_decode">軟解</string>
     <string name="epg_is_empty">節目單為空</string>
+    <string name="remote_config_server">遠程配置中心地址</string>
+    <string name="remote_config_server_hint">未設定，可在遠程配置網頁中設定</string>
+    <string name="remote_server_set_success">遠程配置中心設定成功</string>
+    <string name="remote_server_set_failure">遠程配置中心設定失敗</string>
 </resources>

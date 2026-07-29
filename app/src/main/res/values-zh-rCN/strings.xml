@@ -53,4 +53,8 @@
     <string name="no_video_source">暂无视频源</string>
     <string name="soft_decode">软解</string>
     <string name="epg_is_empty">节目单为空</string>
+    <string name="remote_config_server">远程配置中心地址</string>
+    <string name="remote_config_server_hint">未设置，可在远程配置网页中设置</string>
+    <string name="remote_server_set_success">远程配置中心设置成功</string>
+    <string name="remote_server_set_failure">远程配置中心设置失败</string>
 </resources>

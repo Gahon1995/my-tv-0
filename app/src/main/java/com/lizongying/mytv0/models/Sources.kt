@@ -98,6 +98,17 @@ class Sources {
 
         Log.i(TAG, "sourceId is not exists")
         return false
+
+    fun mergeRemoteSources(uris: List<String>) {
+        val missing = uris.filter { uri -> sourcesValue.none { it.uri == uri } }
+        if (missing.isEmpty()) return
+        _sources.value = sourcesValue.toMutableList().apply {
+            addAll(missing.map { Source(uri = it) })
+        }
+        SP.sources = gson.toJson(sourcesValue, typeSourceList) ?: ""
+        _changed.value = version
+        version++
+    }
     }
 
     fun getSource(idx: Int): Source? {

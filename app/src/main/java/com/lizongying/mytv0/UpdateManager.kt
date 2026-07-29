@@ -35,6 +35,19 @@ class UpdateManager(
     var release: ReleaseResponse? = null
 
     private suspend fun getRelease(): ReleaseResponse? {
+        RemoteConfigManager.current?.update?.let {
+            if (it.version_code != null && !it.apk_url.isNullOrEmpty()) {
+                Log.i(TAG, "use remote config release ${it.version_name}")
+                return ReleaseResponse(
+                    version_code = it.version_code,
+                    version_name = it.version_name,
+                    apk_name = it.apk_name,
+                    apk_url = it.apk_url,
+                    changelog = it.changelog,
+                )
+            }
+        }
+
         val urls = getUrls(VERSION_URL)
 
         for (u in urls) {
@@ -75,6 +88,11 @@ class UpdateManager(
                 if (release?.version_code != null) {
                     if (release?.version_code!! >= versionCode) {
                         text = "最新版本：${release?.version_name}"
+                        release?.changelog?.takeIf { it.isNotBlank() }?.let {
+                            text += "
+
+$it"
+                        }
                         update = true
                     } else {
                         text = "已是最新版本，不需要更新"

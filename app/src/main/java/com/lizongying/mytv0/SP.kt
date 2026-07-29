@@ -60,6 +60,12 @@ object SP {
 
     private const val KEY_SOFT_DECODE = "soft_decode"
 
+    private const val KEY_REMOTE_CONFIG_SERVER = "remote_config_server"
+    private const val KEY_REMOTE_CONFIG_ETAG = "remote_config_etag"
+    private const val KEY_LOGO_BASE_URL = "logo_base_url"
+    private const val KEY_USER_OVERRIDE_EPG = "user_override_epg"
+    private const val KEY_USER_OVERRIDE_CONFIG = "user_override_config"
+
     const val DEFAULT_CHANNEL_REVERSAL = false
     const val DEFAULT_CHANNEL_NUM = false
     const val DEFAULT_TIME = true
@@ -216,4 +222,32 @@ object SP {
     var sources: String?
         get() = sp.getString(KEY_SOURCES, DEFAULT_SOURCES)
         set(value) = sp.edit().putString(KEY_SOURCES, value).apply()
+
+    const val DEFAULT_REMOTE_CONFIG_SERVER = "https://iptv.p.gahon.top"
+
+    var remoteConfigServer: String?
+        get() = sp.getString(KEY_REMOTE_CONFIG_SERVER, DEFAULT_REMOTE_CONFIG_SERVER)
+        set(value) = sp.edit().putString(KEY_REMOTE_CONFIG_SERVER, value).apply()
+
+    var remoteConfigEtag: String?
+        get() = sp.getString(KEY_REMOTE_CONFIG_ETAG, "")
+        set(value) = sp.edit().putString(KEY_REMOTE_CONFIG_ETAG, value).apply()
+
+    var logoBaseUrl: String?
+        get() = sp.getString(KEY_LOGO_BASE_URL, "")
+        set(value) = sp.edit().putString(KEY_LOGO_BASE_URL, value).apply()
+
+    var userOverrideEpg: Boolean
+        get() = sp.getBoolean(KEY_USER_OVERRIDE_EPG, false)
+        set(value) = sp.edit().putBoolean(KEY_USER_OVERRIDE_EPG, value).apply()
+
+    var userOverrideConfig: Boolean
+        get() = sp.getBoolean(KEY_USER_OVERRIDE_CONFIG, false)
+        set(value) = sp.edit().putBoolean(KEY_USER_OVERRIDE_CONFIG, value).apply()
+
+    fun clearUserOverrides() {
+        userOverrideEpg = false
+        userOverrideConfig = false
+        remoteConfigEtag = ""
+    }
 }

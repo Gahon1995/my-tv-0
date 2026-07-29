@@ -6,5 +6,6 @@ data class RespSettings(
     val channelDefault: Int,
     val proxy: String,
     val epg: String,
+    val remoteServer: String,
     val history: List<Source>,
 )

@@ -6,4 +6,5 @@ data class ReleaseResponse(
     val version_name: String?,
     val apk_name: String?,
     val apk_url: String?,
+    val changelog: String? = null,
 )
