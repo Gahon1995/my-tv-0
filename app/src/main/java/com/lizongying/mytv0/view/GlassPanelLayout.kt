@@ -1,14 +1,15 @@
 package com.lizongying.mytv0.view
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.os.Build
-import android.renderscript.RenderEffect
 import android.util.AttributeSet
 import android.widget.FrameLayout
 import com.lizongying.mytv0.SP
@@ -46,10 +47,10 @@ class GlassPanelLayout @JvmOverloads constructor(
     private var gradient: LinearGradient? = null
     private var lastWidth = 0
     private var lastHeight = 0
+    private var glassApplied = false
 
     init {
         setWillNotDraw(false)
-        // 确保背景透明，由 onDraw 绘制
         setBackgroundColor(Color.TRANSPARENT)
     }
 
@@ -86,39 +87,29 @@ class GlassPanelLayout @JvmOverloads constructor(
         val h = height.toFloat()
         if (w > 0 && h > 0) {
             rect.set(0f, 0f, w, h)
-
-            // 画半透明底色
             fillPaint.shader = null
             fillPaint.color = baseColor
             canvas.drawRoundRect(rect, radius, radius, fillPaint)
-
-            // 画顶部渐变高光
             gradient?.let {
                 fillPaint.shader = it
                 canvas.drawRoundRect(rect, radius, radius, fillPaint)
                 fillPaint.shader = null
             }
-
-            // 画描边
             canvas.drawRoundRect(rect, radius, radius, strokePaint)
         }
         super.dispatchDraw(canvas)
     }
 
+    @SuppressLint("NewApi")
     private fun applyGlassEffect() {
-        if (SP.glassBlur && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            try {
-                val effect = RenderEffect.createBlurEffect(
-                    24f, 24f,
-                    RenderEffect.createBlurEffect(24f, 24f, RenderEffect.TileMode.CLAMP)
-                )
-                // 注意：RenderEffect 作用于整个 View 的内容，需要设置到 View 层级
-                // 在 GlassPanelLayout 上设置会让子 View 也被模糊，所以只对底层容器生效
-                // 这里使用 setRenderEffect（Android 12+ API）
-                setRenderEffect(effect)
-            } catch (_: Exception) {
-                // 降级到纯色模式
-            }
+        if (glassApplied) return
+        if (!SP.glassBlur || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        glassApplied = true
+        try {
+            val effect = RenderEffect.createBlurEffect(24f, 24f, Shader.TileMode.CLAMP)
+            setRenderEffect(effect)
+        } catch (_: Exception) {
+            // 降级到纯色模式
         }
     }
 }
