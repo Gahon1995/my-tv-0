@@ -35,16 +35,15 @@ class TimeFragment : Fragment() {
 
         val application = requireActivity().applicationContext as MyTVApplication
 
-        binding.time.layoutParams.width = application.px2Px(binding.time.layoutParams.width)
-        binding.time.layoutParams.height = application.px2Px(binding.time.layoutParams.height)
+        binding.timeCapsule.layoutParams.height = application.px2Px(binding.timeCapsule.layoutParams.height)
 
-        val layoutParams = binding.time.layoutParams as ViewGroup.MarginLayoutParams
-        layoutParams.topMargin = application.px2Px(binding.time.marginTop)
-        layoutParams.marginEnd = application.px2Px(binding.time.marginEnd)
-        binding.time.layoutParams = layoutParams
+        val layoutParams = binding.timeCapsule.layoutParams as ViewGroup.MarginLayoutParams
+        layoutParams.topMargin = application.px2Px(binding.timeCapsule.marginTop)
+        layoutParams.marginEnd = application.px2Px(binding.timeCapsule.marginEnd)
+        binding.timeCapsule.layoutParams = layoutParams
 
         binding.content.textSize = application.px2PxFont(binding.content.textSize)
-        binding.channel.textSize = application.px2PxFont(binding.channel.textSize)
+        binding.channelTag.textSize = application.px2PxFont(binding.channelTag.textSize)
 
         binding.main.layoutParams.width = application.shouldWidthPx()
         binding.main.layoutParams.height = application.shouldHeightPx()
@@ -59,6 +58,10 @@ class TimeFragment : Fragment() {
         job = viewLifecycleOwner.lifecycleScope.launch {
             while (isActive) {
                 binding.content.text = viewModel.getTime()
+                // 更新频道标签
+                viewModel.groupModel.getCurrent()?.let {
+                    binding.channelTag.text = it.tv.title
+                }
                 delay(delay)
             }
         }
@@ -80,6 +83,9 @@ class TimeFragment : Fragment() {
             job = viewLifecycleOwner.lifecycleScope.launch {
                 while (isActive) {
                     binding.content.text = viewModel.getTime()
+                    viewModel.groupModel.getCurrent()?.let {
+                        binding.channelTag.text = it.tv.title
+                    }
                     delay(delay)
                 }
             }

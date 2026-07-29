@@ -65,6 +65,7 @@ object SP {
     private const val KEY_LOGO_BASE_URL = "logo_base_url"
     private const val KEY_USER_OVERRIDE_EPG = "user_override_epg"
     private const val KEY_USER_OVERRIDE_CONFIG = "user_override_config"
+    private const val KEY_GLASS_BLUR = "glass_blur"
 
     const val DEFAULT_CHANNEL_REVERSAL = false
     const val DEFAULT_CHANNEL_NUM = false
@@ -80,6 +81,7 @@ object SP {
     const val DEFAULT_DISPLAY_SECONDS = true
     const val DEFAULT_LOG_TIMES = 10
     const val DEFAULT_SOFT_DECODE = false
+    const val DEFAULT_GLASS_BLUR = true
 
     // 0 favorite; 1 all
     const val DEFAULT_POSITION_GROUP = 1
@@ -182,6 +184,10 @@ object SP {
     var softDecode: Boolean
         get() = sp.getBoolean(KEY_SOFT_DECODE, DEFAULT_SOFT_DECODE)
         set(value) = sp.edit().putBoolean(KEY_SOFT_DECODE, value).apply()
+
+    var glassBlur: Boolean
+        get() = sp.getBoolean(KEY_GLASS_BLUR, DEFAULT_GLASS_BLUR)
+        set(value) = sp.edit().putBoolean(KEY_GLASS_BLUR, value).apply()
 
     fun getLike(id: Int): Boolean {
         val stringSet = sp.getStringSet(KEY_LIKE, emptySet())

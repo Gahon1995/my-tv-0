@@ -142,11 +142,13 @@ class SourcesAdapter(
 
         fun focus(hasFocus: Boolean) {
             if (hasFocus) {
-                binding.title.setTextColor(ContextCompat.getColor(context, R.color.white))
-                binding.root.setBackgroundResource(R.color.focus)
+                binding.title.setTextColor(ContextCompat.getColor(context, R.color.focus))
+                binding.num.setTextColor(ContextCompat.getColor(context, R.color.focus))
+                binding.root.setBackgroundResource(R.drawable.bg_item_focused)
             } else {
-                binding.title.setTextColor(ContextCompat.getColor(context, R.color.title_blur))
-                binding.root.setBackgroundResource(R.color.blur)
+                binding.title.setTextColor(ContextCompat.getColor(context, R.color.description_blur))
+                binding.num.setTextColor(ContextCompat.getColor(context, R.color.description_blur))
+                binding.root.setBackgroundResource(android.R.color.transparent)
             }
         }
 

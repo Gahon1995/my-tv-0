@@ -117,10 +117,12 @@ class ProgramAdapter(
 
         fun focus(hasFocus: Boolean, isCurrent: Boolean) {
             if (hasFocus) {
+                binding.root.setBackgroundResource(R.drawable.bg_item_focused)
                 val color = ContextCompat.getColor(context, R.color.focus)
                 binding.title.setTextColor(color)
                 binding.description.setTextColor(color)
             } else {
+                binding.root.setBackgroundResource(android.R.color.transparent)
                 if (isCurrent) {
                     val color = ContextCompat.getColor(context, R.color.white)
                     binding.title.setTextColor(color)

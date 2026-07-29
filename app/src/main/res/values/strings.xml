@@ -57,4 +57,6 @@
     <string name="remote_config_server_hint">Not set. Configure via the remote configuration page.</string>
     <string name="remote_server_set_success">Remote config server set successfully</string>
     <string name="remote_server_set_failure">Failed to set remote config server</string>
+    <string name="title_glass_blur">Glass Effect</string>
+    <string name="title_glass_blur_desc">Use blurred translucent panels (may affect performance on low-end devices)</string>
 </resources>

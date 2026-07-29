@@ -7,27 +7,30 @@
     android:clickable="true"
     android:focusable="false"
     android:gravity="end"
+    android:paddingHorizontal="30dp"
+    android:paddingVertical="40dp"
     >
     <ScrollView
         android:id="@+id/container"
-        android:layout_width="wrap_content"
+        android:layout_width="380dp"
         android:layout_height="match_parent"
         android:fillViewport="true"
         >
     <LinearLayout
         android:id="@+id/content"
-        android:layout_width="330dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingTop="20dp"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp"
-        android:background="@color/blur"
+        android:padding="20dp"
+        android:background="@drawable/bg_panel_rounded"
         >
+
+        <!-- 标题 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:layout_marginBottom="16dp"
             >
             <androidx.appcompat.widget.AppCompatTextView
                 android:id="@+id/name"
@@ -35,7 +38,8 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/title_blur"
                 android:text="@string/app_name"
-                android:textSize="16sp"
+                android:textSize="18sp"
+                android:textStyle="bold"
                 android:layout_gravity="bottom" />
             <androidx.appcompat.widget.AppCompatTextView
                 android:id="@+id/version_name"
@@ -43,131 +47,158 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/description_blur"
                 android:text=""
-                android:textSize="14sp"
+                android:textSize="12sp"
                 android:layout_gravity="bottom"
                 android:layout_marginStart="8dp" />
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/version"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/description_blur"
+                android:text=""
+                android:textSize="11sp"
+                android:layout_gravity="bottom"
+                android:layout_marginStart="8dp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                />
         </LinearLayout>
 
+        <!-- 数据源 -->
         <androidx.appcompat.widget.AppCompatTextView
-            android:id="@+id/version"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"
-            android:textColor="@color/title_blur"
-            android:text=""
-            android:textSize="14sp"
-            />
+            android:textColor="@color/description_blur"
+            android:textSize="10sp"
+            android:text="数据源"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="8dp"
+            android:textAllCaps="true"/>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:layout_marginBottom="4dp"
             >
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/remote_settings"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:background="@color/description_blur"
-                android:textColor="@color/blur"
-                android:layout_marginEnd="5dp"
-                android:textSize="14sp"
-                android:text="@string/server" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="13dp">
-
-                <androidx.appcompat.widget.AppCompatTextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/title_blur"
-                    android:text="@string/remote_config_server"
-                    android:textSize="15sp" />
-
-                <androidx.appcompat.widget.AppCompatTextView
-                    android:id="@+id/remote_config_server_text"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="@color/description_blur"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:textColor="@color/blur"
-                    android:singleLine="true"
-                    android:ellipsize="middle"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_btn_normal"
+                android:textColor="@color/description_blur"
+                android:layout_marginEnd="6dp"
+                android:textSize="12sp"
+                android:text="@string/server"
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/confirm_config"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:background="@color/description_blur"
-                android:textColor="@color/blur"
-                android:layout_marginEnd="5dp"
-                android:textSize="14sp"
-                android:text="@string/channels" />
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_btn_normal"
+                android:textColor="@color/description_blur"
+                android:layout_marginEnd="6dp"
+                android:textSize="12sp"
+                android:text="@string/channels"
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/clear"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:background="@color/description_blur"
-                android:textColor="@color/blur"
-                android:layout_marginEnd="5dp"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_btn_normal"
+                android:textColor="@color/description_blur"
                 android:text="@string/clear"
-                android:textSize="14sp"
-                />
+                android:textSize="12sp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
         </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/remote_config_server_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            android:paddingHorizontal="4dp"
+            android:textColor="@color/description_blur"
+            android:singleLine="true"
+            android:ellipsize="middle"
+            android:textSize="10sp" />
+
+        <!-- 应用 -->
+        <androidx.appcompat.widget.AppCompatTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/description_blur"
+            android:textSize="10sp"
+            android:text="应用"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="8dp"
+            android:textAllCaps="true"/>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
             android:orientation="horizontal"
+            android:layout_marginBottom="14dp"
             >
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/check_version"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:background="@color/description_blur"
-                android:textColor="@color/blur"
-                android:layout_marginEnd="5dp"
-                android:textSize="14sp"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_btn_normal"
+                android:textColor="@color/description_blur"
+                android:layout_marginEnd="6dp"
+                android:textSize="12sp"
                 android:text="@string/check_version"
-                />
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/exit"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:background="@color/description_blur"
-                android:textColor="@color/blur"
-                android:layout_marginEnd="5dp"
-                android:text="@string/exit"
-                android:textSize="14sp"
-                />
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/appreciate"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:background="@color/description_blur"
-                android:textColor="@color/blur"
-                android:layout_marginEnd="5dp"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_btn_normal"
+                android:textColor="@color/description_blur"
+                android:layout_marginEnd="6dp"
                 android:text="@string/appreciate"
-                android:textSize="14sp"
-                />
+                android:textSize="12sp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/exit"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_btn_normal"
+                android:textColor="@color/red"
+                android:text="@string/exit"
+                android:textSize="12sp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp" />
         </LinearLayout>
+
+        <!-- 观看偏好 -->
+        <androidx.appcompat.widget.AppCompatTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/description_blur"
+            android:textSize="10sp"
+            android:text="观看偏好"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="4dp"
+            android:textAllCaps="true"/>
 
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switch_channel_reversal"
             android:text="@string/title_channel_reversal"
-            android:textColor="@color/title_blur"
+            android:textColor="@color/description_blur"
             android:textSize="14sp"
-            android:layout_marginTop="5dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:thumbTint="@color/switch_thumb_color"
@@ -176,9 +207,8 @@
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switch_channel_num"
             android:text="@string/title_channel_num"
-            android:textColor="@color/title_blur"
+            android:textColor="@color/description_blur"
             android:textSize="14sp"
-            android:layout_marginTop="5dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:thumbTint="@color/switch_thumb_color"
@@ -187,30 +217,125 @@
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switch_time"
             android:text="@string/title_time"
-            android:textColor="@color/title_blur"
+            android:textColor="@color/description_blur"
             android:textSize="14sp"
-            android:layout_marginTop="5dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:thumbTint="@color/switch_thumb_color"
             app:trackTint="@color/switch_track_color"
             />
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switch_config_auto_load"
+            android:text="@string/title_config_auto_load"
+            android:textColor="@color/description_blur"
+            android:textSize="14sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            />
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switch_default_like"
+            android:text="@string/title_default_like"
+            android:textColor="@color/description_blur"
+            android:textSize="14sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            />
+
+        <!-- 界面外观 -->
+        <androidx.appcompat.widget.AppCompatTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/description_blur"
+            android:textSize="10sp"
+            android:text="界面外观"
+            android:letterSpacing="0.1"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:textAllCaps="true"/>
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switch_glass_blur"
+            android:text="@string/title_glass_blur"
+            android:textColor="@color/description_blur"
+            android:textSize="14sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            />
+        <androidx.appcompat.widget.AppCompatTextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/description_blur"
+            android:textSize="10sp"
+            android:text="@string/title_glass_blur_desc"
+            android:layout_marginBottom="4dp"
+            android:layout_marginStart="4dp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switch_compact_menu"
+            android:text="@string/compact_menu"
+            android:textColor="@color/description_blur"
+            android:textSize="14sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            />
+
+        <!-- 显示 -->
+        <androidx.appcompat.widget.AppCompatTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/description_blur"
+            android:textSize="10sp"
+            android:text="显示"
+            android:letterSpacing="0.1"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:textAllCaps="true"/>
+
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switch_display_seconds"
             android:text="@string/display_seconds"
-            android:textColor="@color/title_blur"
+            android:textColor="@color/description_blur"
             android:textSize="14sp"
-            android:layout_marginTop="5dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:thumbTint="@color/switch_thumb_color"
             app:trackTint="@color/switch_track_color"
             />
         <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switch_boot_startup"
-            android:text="@string/title_boot_startup"
-            android:textColor="@color/title_blur"
-            android:layout_marginTop="5dp"
+            android:id="@+id/switch_show_all_channels"
+            android:text="@string/show_all_channels"
+            android:textColor="@color/description_blur"
+            android:textSize="14sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:thumbTint="@color/switch_thumb_color"
+            app:trackTint="@color/switch_track_color"
+            />
+
+        <!-- 播放 -->
+        <androidx.appcompat.widget.AppCompatTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/description_blur"
+            android:textSize="10sp"
+            android:text="播放"
+            android:letterSpacing="0.1"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:textAllCaps="true"/>
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switch_soft_decode"
+            android:text="@string/soft_decode"
+            android:textColor="@color/description_blur"
             android:textSize="14sp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -220,64 +345,18 @@
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switch_repeat_info"
             android:text="@string/title_repeat_info"
-            android:textColor="@color/title_blur"
+            android:textColor="@color/description_blur"
             android:textSize="14sp"
-            android:layout_marginTop="5dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:thumbTint="@color/switch_thumb_color"
             app:trackTint="@color/switch_track_color"
             />
         <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switch_config_auto_load"
-            android:text="@string/title_config_auto_load"
-            android:textColor="@color/title_blur"
+            android:id="@+id/switch_boot_startup"
+            android:text="@string/title_boot_startup"
+            android:textColor="@color/description_blur"
             android:textSize="14sp"
-            android:layout_marginTop="5dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:thumbTint="@color/switch_thumb_color"
-            app:trackTint="@color/switch_track_color"
-            />
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switch_default_like"
-            android:text="@string/title_default_like"
-            android:textColor="@color/title_blur"
-            android:textSize="14sp"
-            android:layout_marginTop="5dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:thumbTint="@color/switch_thumb_color"
-            app:trackTint="@color/switch_track_color"
-            />
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switch_show_all_channels"
-            android:text="@string/show_all_channels"
-            android:textColor="@color/title_blur"
-            android:textSize="14sp"
-            android:layout_marginTop="5dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:thumbTint="@color/switch_thumb_color"
-            app:trackTint="@color/switch_track_color"
-            />
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switch_compact_menu"
-            android:text="@string/compact_menu"
-            android:textColor="@color/title_blur"
-            android:textSize="14sp"
-            android:layout_marginTop="5dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:thumbTint="@color/switch_thumb_color"
-            app:trackTint="@color/switch_track_color"
-            />
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switch_soft_decode"
-            android:text="@string/soft_decode"
-            android:textColor="@color/title_blur"
-            android:textSize="14sp"
-            android:layout_marginTop="5dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:thumbTint="@color/switch_thumb_color"

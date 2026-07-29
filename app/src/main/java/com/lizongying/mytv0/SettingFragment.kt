@@ -125,6 +125,13 @@ class SettingFragment : Fragment() {
             mainActivity.settingActive()
         }
 
+        val switchGlassBlur = _binding?.switchGlassBlur
+        switchGlassBlur?.isChecked = SP.glassBlur
+        switchGlassBlur?.setOnCheckedChangeListener { _, isChecked ->
+            SP.glassBlur = isChecked
+            mainActivity.settingActive()
+        }
+
         binding.remoteSettings.setOnClickListener {
             val imageModalFragment = ModalFragment()
             val args = Bundle()
@@ -202,17 +209,10 @@ class SettingFragment : Fragment() {
             binding.exit,
             binding.appreciate,
         )) {
-            i.layoutParams.width = btnWidth
             i.textSize = txtTextSize
-            i.layoutParams = btnLayoutParams
             i.setOnFocusChangeListener { _, hasFocus ->
                 if (hasFocus) {
-                    i.background = ColorDrawable(
-                        ContextCompat.getColor(
-                            context,
-                            R.color.focus
-                        )
-                    )
+                    i.background = ContextCompat.getDrawable(context, R.drawable.bg_btn_focused)
                     i.setTextColor(
                         ContextCompat.getColor(
                             context,
@@ -220,18 +220,22 @@ class SettingFragment : Fragment() {
                         )
                     )
                 } else {
-                    i.background = ColorDrawable(
-                        ContextCompat.getColor(
-                            context,
-                            R.color.description_blur
+                    i.background = ContextCompat.getDrawable(context, R.drawable.bg_btn_normal)
+                    if (i == binding.exit) {
+                        i.setTextColor(
+                            ContextCompat.getColor(
+                                context,
+                                R.color.red
+                            )
                         )
-                    )
-                    i.setTextColor(
-                        ContextCompat.getColor(
-                            context,
-                            R.color.blur
+                    } else {
+                        i.setTextColor(
+                            ContextCompat.getColor(
+                                context,
+                                R.color.description_blur
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
@@ -255,6 +259,7 @@ class SettingFragment : Fragment() {
             binding.switchCompactMenu,
             binding.switchDisplaySeconds,
             binding.switchSoftDecode,
+            binding.switchGlassBlur,
         )) {
             i.textSize = textSizeSwitch
             i.layoutParams = layoutParamsSwitch
@@ -513,6 +518,7 @@ class SettingFragment : Fragment() {
         binding.switchDefaultLike.isChecked = SP.defaultLike
         binding.switchDisplaySeconds.isChecked = SP.displaySeconds
         binding.switchSoftDecode.isChecked = SP.softDecode
+        binding.switchGlassBlur.isChecked = SP.glassBlur
     }
 
     companion object {

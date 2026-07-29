@@ -1,13 +1,35 @@
 <resources>
-    <color name="focus">#0096A6</color>
-    <color name="blur">#FF263238</color>
+    <!-- 主色调 -->
+    <color name="focus">#00BCD4</color>
+    <color name="focus_dim">#0096A6</color>
+    <color name="focus_bg">#1A00BCD4</color>
+
+    <!-- 面板色（毛玻璃半透明） -->
+    <color name="surface">#CC10161F</color>
+    <color name="surface_light">#9910161F</color>
+
+    <!-- 玻璃细节 -->
+    <color name="glass_border">#33FFFFFF</color>
+    <color name="glass_highlight">#1AFFFFFF</color>
+
+    <!-- 旧色名保留兼容：blur -> surface 的别名场景 -->
+    <color name="blur">#CC10161F</color>
+
+    <!-- 基础色 -->
     <color name="black">#000</color>
     <color name="white">#FFF</color>
-    <color name="red">#F00</color>
+    <color name="red">#FF5252</color>
+
+    <!-- 文字 -->
     <color name="title_blur">#FFEEEEEE</color>
-    <color name="description_blur">#B3EEEEEE</color>
-    <color name="track_checked">#400096A6</color>
-    <color name="track_unchecked">#B3EEEEEE</color>
-    <color name="thumb_checked">#0096A6</color>
+    <color name="description_blur">#99EEEEEE</color>
+
+    <!-- Switch -->
+    <color name="track_checked">#4000BCD4</color>
+    <color name="track_unchecked">#33FFFFFF</color>
+    <color name="thumb_checked">#00BCD4</color>
     <color name="thumb_unchecked">#FFEEEEEE</color>
+
+    <!-- 特殊语义 -->
+    <color name="heart_red">#FF5252</color>
 </resources>

@@ -11,34 +11,37 @@
         android:layout_height="match_parent"
         >
 
-        <RelativeLayout
-            android:id="@+id/time"
-            android:layout_width="150dp"
-            android:layout_height="60dp"
+        <!-- 时间+频道号合并胶囊 -->
+        <LinearLayout
+            android:id="@+id/time_capsule"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
             android:layout_gravity="end|top"
-            android:layout_marginTop="15dp"
+            android:layout_marginTop="20dp"
             android:layout_marginEnd="30dp"
-            android:gravity="end|bottom" >
-            <androidx.appcompat.widget.AppCompatTextView
-                android:id="@+id/channel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end|bottom"
-                android:textColor="@color/white"
-                android:textStyle="normal"
-                android:textSize="36sp"
-                tools:text="999"
-                android:layout_alignBaseline="@+id/content"/>
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_capsule"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            >
             <androidx.appcompat.widget.AppCompatTextView
                 android:id="@+id/content"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="end|bottom"
                 android:textColor="@color/white"
                 android:textStyle="normal"
-                android:textSize="30sp"
-                tools:text="12:34:56" />
-        </RelativeLayout>
-
+                android:textSize="28sp"
+                android:fontFeatureSettings="tnum"
+                tools:text="23:15" />
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/channel_tag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:textColor="@color/description_blur"
+                android:textSize="16sp"
+                tools:text="CCTV-1" />
+        </LinearLayout>
     </FrameLayout>
 </LinearLayout>

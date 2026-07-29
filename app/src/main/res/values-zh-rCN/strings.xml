@@ -57,4 +57,6 @@
     <string name="remote_config_server_hint">未设置，可在远程配置网页中设置</string>
     <string name="remote_server_set_success">远程配置中心设置成功</string>
     <string name="remote_server_set_failure">远程配置中心设置失败</string>
+    <string name="title_glass_blur">毛玻璃特效</string>
+    <string name="title_glass_blur_desc">启用模糊半透明面板（部分低端设备可能影响性能）</string>
 </resources>

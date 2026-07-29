@@ -4,18 +4,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/transparent"
+    android:gravity="center"
     >
 
-    <LinearLayout
-        android:id="@+id/main"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center" >
-
-        <androidx.core.widget.ContentLoadingProgressBar
-            android:id="@+id/bar"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:indeterminateTint="@color/white"/>
-    </LinearLayout>
+    <ProgressBar
+        android:id="@+id/bar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:indeterminate="true"
+        android:indeterminateTint="@color/focus"
+        android:indeterminateTintMode="src_atop"
+        />
 </FrameLayout>

@@ -221,8 +221,7 @@ class PlayerFragment : Fragment() {
     }
 
     fun showVolume(visibility: Int) {
-        binding.icon.visibility = visibility
-        binding.volume.visibility = visibility
+        binding.volumeContainer.visibility = visibility
         hideVolume()
     }
 
@@ -233,6 +232,7 @@ class PlayerFragment : Fragment() {
     fun setVolume(progress: Int, volume: Boolean = false) {
         val context = requireContext()
         binding.volume.progress = progress
+        binding.volumePct.text = "${progress * 100 / binding.volume.max}"
         binding.icon.setImageDrawable(
             ContextCompat.getDrawable(
                 context,
@@ -243,6 +243,7 @@ class PlayerFragment : Fragment() {
                 }
             )
         )
+        binding.icon.setColorFilter(ContextCompat.getColor(context, R.color.description_blur))
     }
 
     fun hideVolume() {
@@ -256,8 +257,7 @@ class PlayerFragment : Fragment() {
     }
 
     private val hideVolumeRunnable = Runnable {
-        binding.icon.visibility = View.GONE
-        binding.volume.visibility = View.GONE
+        binding.volumeContainer.visibility = View.GONE
     }
 
     override fun onResume() {

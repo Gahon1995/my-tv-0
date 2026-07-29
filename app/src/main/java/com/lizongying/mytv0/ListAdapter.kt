@@ -42,15 +42,11 @@ class ListAdapter(
 
         binding.icon.layoutParams.width = application.px2Px(binding.icon.layoutParams.width)
         binding.icon.layoutParams.height = application.px2Px(binding.icon.layoutParams.height)
-        binding.icon.setPadding(application.px2Px(binding.icon.paddingTop))
 
-        binding.title.layoutParams.width = application.px2Px(binding.title.layoutParams.width)
-        binding.title.layoutParams.height = application.px2Px(binding.title.layoutParams.height)
         binding.title.textSize = application.px2PxFont(binding.title.textSize)
 
         binding.heart.layoutParams.width = application.px2Px(binding.heart.layoutParams.width)
         binding.heart.layoutParams.height = application.px2Px(binding.heart.layoutParams.height)
-        binding.heart.setPadding(application.px2Px(binding.heart.paddingTop))
 
         return ViewHolder(context, binding)
     }
@@ -233,11 +229,13 @@ class ListAdapter(
 
         fun focus(hasFocus: Boolean) {
             if (hasFocus) {
-                binding.title.setTextColor(ContextCompat.getColor(context, R.color.white))
-                binding.root.setBackgroundResource(R.color.focus)
+                binding.title.setTextColor(ContextCompat.getColor(context, R.color.focus))
+                binding.root.setBackgroundResource(R.drawable.bg_item_focused)
+                binding.icon.backgroundTintList = ContextCompat.getColorStateList(context, R.color.focus)
             } else {
-                binding.title.setTextColor(ContextCompat.getColor(context, R.color.title_blur))
-                binding.root.setBackgroundResource(R.color.blur)
+                binding.title.setTextColor(ContextCompat.getColor(context, R.color.description_blur))
+                binding.root.setBackgroundResource(android.R.color.transparent)
+                binding.icon.backgroundTintList = ContextCompat.getColorStateList(context, android.R.color.transparent)
             }
         }
 
@@ -249,6 +247,7 @@ class ListAdapter(
                         R.drawable.baseline_favorite_24
                     )
                 )
+                binding.heart.setColorFilter(ContextCompat.getColor(context, R.color.heart_red))
             } else {
                 binding.heart.setImageDrawable(
                     ContextCompat.getDrawable(
@@ -256,6 +255,7 @@ class ListAdapter(
                         R.drawable.baseline_favorite_border_24
                     )
                 )
+                binding.heart.setColorFilter(ContextCompat.getColor(context, R.color.description_blur))
             }
         }
     }

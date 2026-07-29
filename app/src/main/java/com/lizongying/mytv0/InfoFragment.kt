@@ -117,8 +117,27 @@ class InfoFragment : Fragment() {
         val epg = tvModel.epg.value?.filter { it.beginTime < Utils.getDateTimestamp() }
         if (!epg.isNullOrEmpty()) {
             binding.desc.text = epg.last().title
+            // EPG 进度条
+            val now = Utils.getDateTimestamp()
+            val current = epg.last()
+            if (current.beginTime > 0 && current.endTime > current.beginTime) {
+                val progress = ((now - current.beginTime).toFloat() / (current.endTime - current.beginTime) * 100).toInt().coerceIn(0, 100)
+                binding.epgProgress.progress = progress
+                binding.epgProgress.visibility = View.VISIBLE
+                binding.epgTimeStart.text = Utils.getDateFormat("HH:mm", current.beginTime)
+                binding.epgTimeStart.visibility = View.VISIBLE
+                binding.epgTimeEnd.text = Utils.getDateFormat("HH:mm", current.endTime)
+                binding.epgTimeEnd.visibility = View.VISIBLE
+            } else {
+                binding.epgProgress.visibility = View.GONE
+                binding.epgTimeStart.visibility = View.GONE
+                binding.epgTimeEnd.visibility = View.GONE
+            }
         } else {
             binding.desc.text = "精彩節目"
+            binding.epgProgress.visibility = View.GONE
+            binding.epgTimeStart.visibility = View.GONE
+            binding.epgTimeEnd.visibility = View.GONE
         }
 
         handler.removeCallbacks(removeRunnable)
