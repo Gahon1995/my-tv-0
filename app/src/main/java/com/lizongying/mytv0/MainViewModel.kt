@@ -87,7 +87,7 @@ class MainViewModel : ViewModel() {
                 SP.configUrl?.let {
                     if (it.startsWith("http")) {
                         Log.i(TAG, "update config url: $it")
-                        importFromUrl(it, silent = true)
+                        importFromUrl(it)
                         updateEPG()
                     }
                 }
