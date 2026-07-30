@@ -221,12 +221,18 @@ class MainActivity : AppCompatActivity() {
 
             server = SimpleServer(this, viewModel)
 
-            viewModel.updateConfig()
+            // updateConfig 已移至 MainViewModel.init() 延迟执行，
+            // 避免远程拉取阻塞初始起播
         }
     }
 
     private fun watch() {
         viewModel.listModel.forEach { tvModel ->
+            // 防止 group change 时重复注册观察者
+            tvModel.errInfo.removeObservers(this)
+            tvModel.ready.removeObservers(this)
+            tvModel.like.removeObservers(this)
+
             tvModel.errInfo.observe(this) { _ ->
 
                 if (tvModel.errInfo.value != null

@@ -87,7 +87,7 @@ class MainViewModel : ViewModel() {
                 SP.configUrl?.let {
                     if (it.startsWith("http")) {
                         Log.i(TAG, "update config url: $it")
-                        importFromUrl(it)
+                        importFromUrl(it, silent = true)
                         updateEPG()
                     }
                 }
@@ -154,6 +154,12 @@ class MainViewModel : ViewModel() {
         initialized = true
 
         _channelsOk.value = true
+
+        // 延迟后异步拉取远端配置与最新直播源，不阻塞初始起播
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(5_000)
+            updateConfig()
+        }
     }
 
     suspend fun preloadLogo() {
@@ -273,7 +279,7 @@ class MainViewModel : ViewModel() {
         return success
     }
 
-    private suspend fun importFromUrl(url: String, id: String = "") {
+    private suspend fun importFromUrl(url: String, id: String = "", silent: Boolean = false) {
         val urls = getUrls(url).map { Pair(it, url) }
 
         var err = 0
@@ -288,7 +294,7 @@ class MainViewModel : ViewModel() {
                     if (response.isSuccessful) {
                         val str = response.bodyAlias()?.string() ?: ""
                         withContext(Dispatchers.Main) {
-                            tryStr2Channels(str, null, b, id)
+                            tryStr2Channels(str, null, b, id, silent)
                         }
                         err = 0
                         shouldBreak = true
@@ -350,7 +356,7 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun tryStr2Channels(str: String, file: File?, url: String, id: String = "") {
+    fun tryStr2Channels(str: String, file: File?, url: String, id: String = "", silent: Boolean = false) {
         try {
             if (str2Channels(str)) {
                 Log.i(TAG, "write to cacheFile $cacheFile $str")
@@ -367,17 +373,23 @@ class MainViewModel : ViewModel() {
                         source
                     )
                 }
-                _channelsOk.value = true
-                R.string.channel_import_success.showToast()
+                if (!silent) {
+                    _channelsOk.value = true
+                    R.string.channel_import_success.showToast()
+                }
                 Log.i(TAG, "channel import success")
             } else {
-                R.string.channel_import_error.showToast()
+                if (!silent) {
+                    R.string.channel_import_error.showToast()
+                }
                 Log.w(TAG, "channel import error")
             }
         } catch (e: Exception) {
             Log.e(TAG, "tryStr2Channels", e)
             file?.deleteOnExit()
-            R.string.channel_read_error.showToast()
+            if (!silent) {
+                R.string.channel_read_error.showToast()
+            }
         }
     }
 
