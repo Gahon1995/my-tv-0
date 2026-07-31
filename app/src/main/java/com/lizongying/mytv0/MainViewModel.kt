@@ -358,6 +358,17 @@ class MainViewModel : ViewModel() {
 
     fun tryStr2Channels(str: String, file: File?, url: String, id: String = "", silent: Boolean = false) {
         try {
+            // 提前去重：如果解码后内容与缓存完全一致，跳过整个解析流程，避免无意义的重建播放器
+            var string = str
+            val g = Gua()
+            if (g.verify(str)) {
+                string = g.decode(str)
+            }
+            if (initialized && string == cacheChannels) {
+                Log.i(TAG, "remote content unchanged, skip rebuild")
+                return
+            }
+
             if (str2Channels(str)) {
                 Log.i(TAG, "write to cacheFile $cacheFile $str")
                 cacheFile!!.writeText(str)
