@@ -15,8 +15,8 @@ object SP {
     // If Change channel with up and down in reversed order or not
     private const val KEY_CHANNEL_REVERSAL = "channel_reversal"
 
-    // If use channel num to select channel or not
-    private const val KEY_CHANNEL_NUM = "channel_num"
+    // If use channel num to select channel or not — removed, feature disabled
+    // private const val KEY_CHANNEL_NUM = "channel_num"
 
     private const val KEY_TIME = "time"
 
@@ -68,8 +68,7 @@ object SP {
     private const val KEY_GLASS_BLUR = "glass_blur"
 
     const val DEFAULT_CHANNEL_REVERSAL = true
-    const val DEFAULT_CHANNEL_NUM = false
-    const val DEFAULT_TIME = false
+    const val DEFAULT_CHANNEL_NUM = false // deprecated, channel num display removed    const val DEFAULT_TIME = false
     const val DEFAULT_BOOT_STARTUP = false
     const val DEFAULT_CONFIG_URL = ""
     const val DEFAULT_PROXY = ""
@@ -124,10 +123,6 @@ object SP {
     var channelReversal: Boolean
         get() = sp.getBoolean(KEY_CHANNEL_REVERSAL, DEFAULT_CHANNEL_REVERSAL)
         set(value) = sp.edit().putBoolean(KEY_CHANNEL_REVERSAL, value).apply()
-
-    var channelNum: Boolean
-        get() = sp.getBoolean(KEY_CHANNEL_NUM, DEFAULT_CHANNEL_NUM)
-        set(value) = sp.edit().putBoolean(KEY_CHANNEL_NUM, value).apply()
 
     var time: Boolean
         get() = sp.getBoolean(KEY_TIME, DEFAULT_TIME)

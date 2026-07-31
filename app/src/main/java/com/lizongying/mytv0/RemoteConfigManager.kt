@@ -70,7 +70,7 @@ object RemoteConfigManager {
         config.epg_url?.takeIf { it.isNotEmpty() }?.let {
             if (!SP.userOverrideEpg && SP.epg != it) { Log.i(TAG, "apply remote epg $it"); SP.epg = it }
         }
-        SP.logoBaseUrl = config.logo_base_url ?: ""
+        SP.logoBaseUrl = config.logo_base_url?.takeIf { it.isNotEmpty() } ?: SP.logoBaseUrl
         val uris = config.live_sources.orEmpty().map { it.url }.filter { it.isNotEmpty() }
         if (uris.isNotEmpty()) {
             viewModel.sources.mergeRemoteSources(uris)

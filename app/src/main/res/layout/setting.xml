@@ -195,16 +195,6 @@
             app:trackTint="@color/switch_track_color"
             />
         <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switch_channel_num"
-            android:text="@string/title_channel_num"
-            android:textColor="@color/description_blur"
-            android:textSize="14sp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:thumbTint="@color/switch_thumb_color"
-            app:trackTint="@color/switch_track_color"
-            />
-        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/switch_time"
             android:text="@string/title_time"
             android:textColor="@color/description_blur"

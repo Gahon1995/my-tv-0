@@ -61,13 +61,6 @@ class SettingFragment : Fragment() {
             mainActivity.settingActive()
         }
 
-        val switchChannelNum = _binding?.switchChannelNum
-        switchChannelNum?.isChecked = SP.channelNum
-        switchChannelNum?.setOnCheckedChangeListener { _, isChecked ->
-            SP.channelNum = isChecked
-            mainActivity.settingActive()
-        }
-
         val switchTime = _binding?.switchTime
         switchTime?.isChecked = SP.time
         switchTime?.setOnCheckedChangeListener { _, isChecked ->
@@ -241,7 +234,6 @@ class SettingFragment : Fragment() {
 
         for (i in listOf(
             binding.switchChannelReversal,
-            binding.switchChannelNum,
             binding.switchTime,
             binding.switchBootStartup,
             binding.switchRepeatInfo,
@@ -294,7 +286,6 @@ class SettingFragment : Fragment() {
         }
 
         binding.clear.setOnClickListener {
-            SP.channelNum = SP.DEFAULT_CHANNEL_NUM
 
             SP.sources = SP.DEFAULT_SOURCES
             Log.i(TAG, "DEFAULT_SOURCES ${SP.DEFAULT_SOURCES}")
@@ -502,7 +493,7 @@ class SettingFragment : Fragment() {
 
     private fun syncSwitchStates() {
         binding.switchChannelReversal.isChecked = SP.channelReversal
-        binding.switchChannelNum.isChecked = SP.channelNum
+
         binding.switchTime.isChecked = SP.time
         binding.switchBootStartup.isChecked = SP.bootStartup
         binding.switchConfigAutoLoad.isChecked = SP.configAutoLoad

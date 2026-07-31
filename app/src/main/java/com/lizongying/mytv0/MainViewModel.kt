@@ -326,8 +326,14 @@ class MainViewModel : ViewModel() {
     }
 
     fun reset(context: Context) {
-        val str = context.resources.openRawResource(DEFAULT_CHANNELS_FILE).bufferedReader()
-            .use { it.readText() }
+        // 优先用缓存的远程源（如果存在且不为空），否则用内置兜底
+        val cached = getCache()
+        val str = if (cached.isNotEmpty()) {
+            cached
+        } else {
+            context.resources.openRawResource(DEFAULT_CHANNELS_FILE).bufferedReader()
+                .use { it.readText() }
+        }
 
         try {
             str2Channels(str)

@@ -263,9 +263,6 @@ class MainActivity : AppCompatActivity() {
                     showFragment(loadingFragment)
                     playerFragment.play(tvModel)
                     infoFragment.show(tvModel)
-                    if (SP.channelNum) {
-                        channelFragment.show(tvModel)
-                    }
                 }
             }
 
@@ -433,9 +430,6 @@ class MainActivity : AppCompatActivity() {
         val tvModel = viewModel.groupModel.getCurrent()!!
         if (SP.repeatInfo) {
             infoFragment.show(tvModel)
-            if (SP.channelNum) {
-                channelFragment.show(tvModel)
-            }
         }
     }
 
@@ -583,10 +577,6 @@ class MainActivity : AppCompatActivity() {
         if (settingFragment.isVisible) {
             return
         }
-
-//        if (SP.channelNum) {
-//            channelFragment.show(channel)
-//        }
         channelFragment.show(channel)
     }
 
