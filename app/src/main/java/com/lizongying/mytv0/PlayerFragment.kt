@@ -24,6 +24,7 @@ import androidx.media3.exoplayer.mediacodec.MediaCodecUtil
 import com.lizongying.mytv0.data.SourceType
 import com.lizongying.mytv0.databinding.PlayerBinding
 import com.lizongying.mytv0.models.TVModel
+import com.lizongying.mytv0.requests.HttpClient
 
 
 class PlayerFragment : Fragment() {
@@ -66,8 +67,12 @@ class PlayerFragment : Fragment() {
         val renderersFactory = DefaultRenderersFactory(ctx)
         val playerMediaCodecSelector = PlayerMediaCodecSelector()
         renderersFactory.setMediaCodecSelector(playerMediaCodecSelector)
+        // 软解码开关：
+        //  ON  -> 优先扩展(软解)解码器，缺失时回落系统
+        //  OFF -> 禁用扩展，直接走系统（硬解）
         renderersFactory.setExtensionRendererMode(
-            if (SP.softDecode) DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER else DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+            if (SP.softDecode) DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
+            else DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF
         )
 
         if (player != null) {
@@ -143,6 +148,9 @@ class PlayerFragment : Fragment() {
                     tv.setReady(true)
                     if (last) {
                         tv.retryTimes++
+                        // 极可能是 CDN IP 失效，强制下一次重试重新解析 DNS
+                        // （连接层因老 IP 持续失败是切台失败的主因之一）
+                        HttpClient.dnsCache.clear()
                     }
                     Log.i(
                         TAG,

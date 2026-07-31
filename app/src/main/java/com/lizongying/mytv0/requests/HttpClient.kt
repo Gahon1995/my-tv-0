@@ -22,6 +22,9 @@ object HttpClient {
 
     private val clientCache = mutableMapOf<String?, OkHttpClient>()
 
+    /** 全局 DNS 缓存实例，连接失败时可调用 invalidate() 立即重解析。 */
+    val dnsCache = DnsCache()
+
     val okHttpClient: OkHttpClient by lazy {
         getClientWithProxy()
     }
@@ -84,7 +87,7 @@ object HttpClient {
             .sslSocketFactory(sslContext.socketFactory, trustManager)
             .hostnameVerifier { _, _ -> true }
             .connectionSpecs(listOf(ConnectionSpec.COMPATIBLE_TLS, ConnectionSpec.CLEARTEXT))
-            .dns(DnsCache())
+            .dns(dnsCache)
             .apply { enableTls12OnPreLollipop() }
     }
 

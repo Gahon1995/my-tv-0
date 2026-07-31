@@ -82,6 +82,40 @@ class GlassPanelLayout @JvmOverloads constructor(
         applyGlassEffect()
     }
 
+    /**
+     * 让毛玻璃模糊开关实时生效。
+     * 关闭模糊或切换 SP.glassBlur 后调用：清除旧 RenderEffect 并按新开关重建。
+     */
+    fun refreshGlassEffect() {
+        // API < 31 不支持 RenderEffect，保持纯色降级模式
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) {
+            return
+        }
+        if (!SP.glassBlur) {
+            setRenderEffect(null)
+            return
+        }
+        applyGlassEffect()
+    }
+
+    @SuppressLint("NewApi")
+    private fun applyGlassEffect() {
+        if (glassApplied) return
+        if (!SP.glassBlur || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        glassApplied = true
+        try {
+            // 模糊半径从 24f 降到 16f：玻璃质感足够且对大面板渲染开销明显更低
+            val effect = RenderEffect.createBlurEffect(BLUR_RADIUS, BLUR_RADIUS, Shader.TileMode.CLAMP)
+            setRenderEffect(effect)
+        } catch (_: Exception) {
+            // 降级到纯色模式
+        }
+    }
+
+    companion object {
+        private const val BLUR_RADIUS = 16f
+    }
+
     override fun dispatchDraw(canvas: Canvas) {
         val w = width.toFloat()
         val h = height.toFloat()

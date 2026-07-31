@@ -96,6 +96,11 @@ class MyTVApplication : Application() {
     }
 
     fun px2Px(px: Int): Int {
+        // 负值（如 MATCH_PARENT=-1 / WRAP_CONTENT=-2）是 LayoutParams 的特殊常量，
+        // 不能参与像素换算，否则 .toInt() 向零截断会把 -1 变成 0，导致布局塌成 0 宽/0 高。
+        if (px < 0) {
+            return px
+        }
         return (px * ratio + 0.5f).toInt()
     }
 

@@ -108,13 +108,21 @@ class TVModel(var tv: TV) : ViewModel() {
 
     private var _httpDataSource: DataSource.Factory? = null
     private var _mediaItem: MediaItem? = null
+    private var _mediaItemUrl: String? = null
 
     @OptIn(UnstableApi::class)
     fun getMediaItem(): MediaItem? {
-        _mediaItem = getVideoUrl()?.let {
-            val uri = Uri.parse(it) ?: return@let null
-            val path = uri.path ?: return@let null
-            val scheme = uri.scheme ?: return@let null
+        val url = getVideoUrl() ?: return null
+
+        // 同一 URL 时复用已构造的 MediaItem / DataSource，避免重复 Uri.parse 与 header 遍历
+        if (url == _mediaItemUrl && _mediaItem != null) {
+            return _mediaItem
+        }
+
+        _mediaItem = url.let {
+            val uri = Uri.parse(it) ?: return null
+            val path = uri.path ?: return null
+            val scheme = uri.scheme ?: return null
 
             val okHttpDataSource = OkHttpDataSource.Factory(HttpClient.okHttpClient)
             tv.headers?.let { i ->
@@ -145,6 +153,7 @@ class TVModel(var tv: TV) : ViewModel() {
 
             MediaItem.fromUri(it)
         }
+        _mediaItemUrl = if (_mediaItem != null) url else null
         return _mediaItem
     }
 

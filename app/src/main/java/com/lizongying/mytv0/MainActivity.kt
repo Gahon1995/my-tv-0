@@ -25,6 +25,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.lizongying.mytv0.databinding.SettingsWebBinding
+import com.lizongying.mytv0.models.TVModel
 import java.util.Locale
 import kotlin.math.abs
 
@@ -433,12 +434,38 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // 切台防抖：避免按住遥控器连续上/下切时，每按一次都立刻销毁并重建播放器。
+    // 位置状态立即更新（列表焦点跟随），但实际起播延迟 debounce 后在最新目标上触发一次。
+    private val switchDebounceMillis = 220L
+    private var pendingSwitch: TVModel? = null
+
+    private val switchRunnable = Runnable {
+        commitSwitch(pendingSwitch)
+        pendingSwitch = null
+    }
+
+    private fun commitSwitch(tvModel: TVModel?) {
+        tvModel?.setReady()
+    }
+
+    private fun scheduleSwitch(tvModel: TVModel?) {
+        handler.removeCallbacks(switchRunnable)
+        pendingSwitch = tvModel
+        handler.postDelayed(switchRunnable, switchDebounceMillis)
+    }
+
+    /** 立即切台（用于数字选台/菜单选台等一次性选定场景），并取消未決的防抖。 */
+    private fun commitSwitchNow(tvModel: TVModel?) {
+        handler.removeCallbacks(switchRunnable)
+        pendingSwitch = null
+        commitSwitch(tvModel)
+    }
+
     fun play(position: Int): Boolean {
         return if (position > -1 && position < viewModel.groupModel.getAllList()!!.size()) {
             val prevGroup = viewModel.groupModel.positionValue
             val tvModel = viewModel.groupModel.getPosition(position)
 
-            tvModel?.setReady()
             viewModel.groupModel.setPositionPlaying()
             viewModel.groupModel.getCurrentList()?.setPositionPlaying()
 
@@ -446,6 +473,8 @@ class MainActivity : AppCompatActivity() {
             if (currentGroup != prevGroup) {
                 menuFragment.updateList(currentGroup)
             }
+            // 数字选台/菜单选台通常是一次性选定，立即生效
+            commitSwitchNow(tvModel)
             true
         } else {
             R.string.channel_not_exist.showToast()
@@ -463,7 +492,6 @@ class MainActivity : AppCompatActivity() {
                 viewModel.groupModel.getPrev()
             }
 
-        tvModel?.setReady()
         viewModel.groupModel.setPositionPlaying()
         viewModel.groupModel.getCurrentList()?.setPositionPlaying()
 
@@ -471,6 +499,8 @@ class MainActivity : AppCompatActivity() {
         if (currentGroup != prevGroup) {
             menuFragment.updateList(currentGroup)
         }
+        // 遥控器快速连按：防抖合并到最新目标
+        scheduleSwitch(tvModel)
     }
 
     fun next() {
@@ -483,7 +513,6 @@ class MainActivity : AppCompatActivity() {
                 viewModel.groupModel.getNext()
             }
 
-        tvModel?.setReady()
         viewModel.groupModel.setPositionPlaying()
         viewModel.groupModel.getCurrentList()?.setPositionPlaying()
 
@@ -491,6 +520,8 @@ class MainActivity : AppCompatActivity() {
         if (currentGroup != prevGroup) {
             menuFragment.updateList(currentGroup)
         }
+        // 遥控器快速连按：防抖合并到最新目标
+        scheduleSwitch(tvModel)
     }
 
     private fun showFragment(fragment: Fragment) {

@@ -214,23 +214,29 @@ class MainViewModel : ViewModel() {
         try {
             val res = EPGXmlParser().parse(input)
 
-            withContext(Dispatchers.Main) {
-                val e1 = mutableMapOf<String, List<EPG>>()
-                for (m in listModel) {
-                    val name = m.tv.name.ifEmpty { m.tv.title }.lowercase()
-                    if (name.isEmpty()) {
-                        continue
-                    }
-
-                    for ((n, epg) in res) {
-                        if (name.contains(n, ignoreCase = true)) {
-                            m.setEpg(epg)
-                            e1[name] = epg
-                            break
-                        }
+            // 在主线程之外完成磁盘写入（大 JSON），主线程只做内存 setEpg，避免卡顿
+            val e1 = mutableMapOf<String, List<EPG>>()
+            val toSet = mutableListOf<Pair<TVModel, List<EPG>>>()
+            val list = listModel
+            for (m in list) {
+                val name = m.tv.name.ifEmpty { m.tv.title }.lowercase()
+                if (name.isEmpty()) {
+                    continue
+                }
+                for ((n, epg) in res) {
+                    if (name.contains(n, ignoreCase = true)) {
+                        e1[name] = epg
+                        toSet.add(m to epg)
+                        break
                     }
                 }
-                cacheEPG.writeText(gson.toJson(e1))
+            }
+            kotlin.runCatching { cacheEPG.writeText(gson.toJson(e1)) }
+
+            withContext(Dispatchers.Main) {
+                for ((m, epg) in toSet) {
+                    m.setEpg(epg)
+                }
             }
             Log.i(TAG, "readEPG success")
             true

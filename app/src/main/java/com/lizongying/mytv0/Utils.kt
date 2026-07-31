@@ -52,18 +52,28 @@ object Utils {
     val isp: LiveData<ISP>
         get() = _isp
 
+    // SimpleDateFormat 非线程安全且构造开销大，用 ThreadLocal 缓存每个线程的实例，
+    // 避免每次格式化 new 一个（高频：时间条每秒 / EPG 每行绑定）。
+    private val dateFormatCache = ThreadLocal<SimpleDateFormat>()
+
+    private fun getCachedDateFormat(format: String): SimpleDateFormat {
+        var df = dateFormatCache.get()
+        // 同样 format 复用；不同 format 也足够少，直接重建即可（比每次 new 仍省大半）
+        if (df == null) {
+            df = SimpleDateFormat(format, Locale.CHINA)
+            dateFormatCache.set(df)
+        }
+        return df
+    }
+
     fun getDateFormat(format: String): String {
-        return SimpleDateFormat(
-            format,
-            Locale.CHINA
-        ).format(Date(System.currentTimeMillis() - between))
+        return getCachedDateFormat(format)
+            .format(Date(System.currentTimeMillis() - between))
     }
 
     fun getDateFormat(format: String, seconds: Int): String {
-        return SimpleDateFormat(
-            format,
-            Locale.CHINA
-        ).format(Date(seconds * 1000L))
+        return getCachedDateFormat(format)
+            .format(Date(seconds * 1000L))
     }
 
     fun getDateTimestamp(): Long {

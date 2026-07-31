@@ -1,9 +1,6 @@
 package com.lizongying.mytv0
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
 import android.util.Log
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -13,12 +10,12 @@ import android.view.ViewGroup
 import android.view.ViewGroup.FOCUS_BEFORE_DESCENDANTS
 import android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
 import androidx.core.content.ContextCompat
-import androidx.core.view.setPadding
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.lizongying.mytv0.databinding.ListItemBinding
 import com.lizongying.mytv0.models.TVListModel
 import com.lizongying.mytv0.models.TVModel
+import com.lizongying.mytv0.view.ChannelArtFactory
 
 
 class ListAdapter(
@@ -39,6 +36,7 @@ class ListAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val inflater = LayoutInflater.from(context)
         val binding = ListItemBinding.inflate(inflater, parent, false)
+        val viewHolder = ViewHolder(context, binding)
 
         binding.icon.layoutParams.width = application.px2Px(binding.icon.layoutParams.width)
         binding.icon.layoutParams.height = application.px2Px(binding.icon.layoutParams.height)
@@ -48,7 +46,98 @@ class ListAdapter(
         binding.heart.layoutParams.width = application.px2Px(binding.heart.layoutParams.width)
         binding.heart.layoutParams.height = application.px2Px(binding.heart.layoutParams.height)
 
-        return ViewHolder(context, binding)
+        val view = binding.root
+        view.isFocusable = true
+        view.isFocusableInTouchMode = true
+
+        // 监听器只在视图创建时注册一次，避免 onBind 反复新建对象（P0-2）
+        binding.heart.setOnClickListener {
+            val pos = viewHolder.bindingAdapterPosition
+            if (pos != RecyclerView.NO_POSITION) {
+                val model = listTVModel?.getTVModel(pos)
+                model?.let { tvModel ->
+                    tvModel.setLike(!(tvModel.like.value as Boolean))
+                    viewHolder.like(tvModel.like.value as Boolean)
+                }
+            }
+        }
+
+        view.onFocusChangeListener = View.OnFocusChangeListener { v, hasFocus ->
+            val pos = viewHolder.bindingAdapterPosition
+            if (pos == RecyclerView.NO_POSITION) return@OnFocusChangeListener
+            val tvModel = listTVModel?.getTVModel(pos) ?: return@OnFocusChangeListener
+            listener?.onItemFocusChange(tvModel, hasFocus)
+
+            if (hasFocus) {
+                viewHolder.focus(true)
+                focused = v
+                if (visible) {
+                    if (pos != listTVModel?.positionValue) {
+                        listTVModel?.setPosition(pos)
+                    }
+                } else {
+                    visible = true
+                }
+            } else {
+                viewHolder.focus(false)
+            }
+        }
+
+        view.setOnClickListener {
+            val pos = viewHolder.bindingAdapterPosition
+            if (pos != RecyclerView.NO_POSITION) {
+                listener?.onItemClicked(pos)
+            }
+        }
+
+        view.setOnTouchListener(v@{ _: View?, event: MotionEvent? ->
+            event ?: return@setOnTouchListener false
+            if (event.action == MotionEvent.ACTION_UP) {
+                v.performClick()
+                return@setOnTouchListener true
+            }
+            false
+        })
+
+        view.setOnKeyListener { _, keyCode, event: KeyEvent? ->
+            if (event?.action == KeyEvent.ACTION_DOWN) {
+                val pos = viewHolder.bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    if (keyCode == KeyEvent.KEYCODE_DPAD_UP && pos == 0) {
+                        wrapFocusTo(getItemCount() - 1)
+                        return@setOnKeyListener true
+                    }
+                    if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && pos == getItemCount() - 1) {
+                        wrapFocusTo(0)
+                        return@setOnKeyListener true
+                    }
+                    if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                        val model = listTVModel?.getTVModel(pos)
+                        model?.let { tvModel ->
+                            tvModel.setLike(!(tvModel.like.value as Boolean))
+                            viewHolder.like(tvModel.like.value as Boolean)
+                        }
+                        return@setOnKeyListener true
+                    }
+                }
+                return@setOnKeyListener listener?.onKey(this, keyCode) == true
+            }
+            false
+        }
+
+        return viewHolder
+    }
+
+    private fun wrapFocusTo(p: Int) {
+        (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
+            p,
+            0
+        )
+        recyclerView.postDelayed({
+            val v = recyclerView.findViewHolderForAdapterPosition(p)?.itemView
+            v?.isSelected = true
+            v?.requestFocus()
+        }, 0)
     }
 
     fun focusable(able: Boolean) {
@@ -75,112 +164,16 @@ class ListAdapter(
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         listTVModel?.let {
-            val tvModel = it.getTVModel(position)!!
+            val tvModel = it.getTVModel(position)
             val view = viewHolder.itemView
-
-            view.isFocusable = true
-            view.isFocusableInTouchMode = true
-
-            viewHolder.like(tvModel.like.value as Boolean)
-
-            viewHolder.binding.heart.setOnClickListener {
-                tvModel.setLike(!(tvModel.like.value as Boolean))
-                viewHolder.like(tvModel.like.value as Boolean)
-            }
 
             if (!defaultFocused && position == defaultFocus) {
                 view.requestFocus()
                 defaultFocused = true
             }
 
-            val onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
-                listener?.onItemFocusChange(tvModel, hasFocus)
-
-                if (hasFocus) {
-                    viewHolder.focus(true)
-                    focused = view
-                    if (visible) {
-                        if (position != it.positionValue) {
-                            it.setPosition(position)
-                        }
-                    } else {
-                        visible = true
-                    }
-                } else {
-                    viewHolder.focus(false)
-                }
-            }
-
-            view.onFocusChangeListener = onFocusChangeListener
-
-            view.setOnClickListener { _ ->
-                listener?.onItemClicked(position)
-            }
-
-            view.setOnTouchListener(object : View.OnTouchListener {
-                override fun onTouch(
-                    v: View?,
-                    event: MotionEvent?
-                ): Boolean {
-                    v ?: return false
-                    event ?: return false
-
-                    when (event.action) {
-                        MotionEvent.ACTION_UP -> {
-                            v.performClick()
-                            return true
-                        }
-                    }
-
-                    return false
-                }
-            })
-
-            view.setOnKeyListener { _, keyCode, event: KeyEvent? ->
-                if (event?.action == KeyEvent.ACTION_DOWN) {
-                    if (keyCode == KeyEvent.KEYCODE_DPAD_UP && position == 0) {
-                        val p = getItemCount() - 1
-
-                        (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
-                            p,
-                            0
-                        )
-
-                        recyclerView.postDelayed({
-                            val v = recyclerView.findViewHolderForAdapterPosition(p)
-                            v?.itemView?.isSelected = true
-                            v?.itemView?.requestFocus()
-                        }, 0)
-                    }
-
-                    if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && position == getItemCount() - 1) {
-                        val p = 0
-
-                        (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
-                            p,
-                            0
-                        )
-
-                        recyclerView.postDelayed({
-                            val v = recyclerView.findViewHolderForAdapterPosition(p)
-                            v?.itemView?.isSelected = true
-                            v?.itemView?.requestFocus()
-                        }, 0)
-                    }
-
-                    if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                        tvModel.setLike(!(tvModel.like.value as Boolean))
-                        viewHolder.like(tvModel.like.value as Boolean)
-                        return@setOnKeyListener true
-                    }
-
-                    return@setOnKeyListener listener?.onKey(this, keyCode) == true
-                }
-                false
-            }
-
+            viewHolder.like(tvModel!!.like.value as Boolean)
             viewHolder.bindTitle(tvModel.tv.title)
-
             viewHolder.bindImage(tvModel)
         }
     }
@@ -200,28 +193,8 @@ class ListAdapter(
 
         fun bindImage(tvModel: TVModel) {
             val tv = tvModel.tv
-
-            val width = 300
-            val height = 180
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
-
             val channelNum = if (tv.number == -1) tv.id.plus(1) else tv.number
-            var size = 150f
-            if (channelNum > 99) {
-                size = 100f
-            }
-            if (channelNum > 999) {
-                size = 75f
-            }
-            val paint = Paint().apply {
-                color = ContextCompat.getColor(context, R.color.title_blur)
-                textSize = size
-                textAlign = Paint.Align.CENTER
-            }
-            val x = width / 2f
-            val y = height / 2f - (paint.descent() + paint.ascent()) / 2
-            canvas.drawText(channelNum.toString(), x, y, paint)
+            val bitmap = ChannelArtFactory.channelBitmap(context, channelNum)
 
             val name = if (tv.name.isNotEmpty()) { tv.name } else { tv.title }
             imageHelper.loadImage(name, binding.icon, bitmap, tv.logo)
@@ -290,4 +263,3 @@ class ListAdapter(
         private const val TAG = "ListAdapter"
     }
 }
-

@@ -13,11 +13,18 @@ class EPGXmlParser {
 
     private val ns: String? = null
     private val epg = mutableMapOf<String, MutableList<EPG>>()
-    private val dateFormat = SimpleDateFormat("yyyyMMddHHmmss Z", Locale.getDefault())
     private val now = getDateTimestamp()
 
+    // SimpleDateFormat 非线程安全，parse() 可能并发调用，这里每次解释用局部实例避免竞争
+    private val dateFormatThreadLocal = ThreadLocal<SimpleDateFormat>()
+
     private fun formatFTime(s: String): Int {
-        return dateFormat.parse(s)?.time?.div(1000)?.toInt() ?: 0
+        var df = dateFormatThreadLocal.get()
+        if (df == null) {
+            df = SimpleDateFormat("yyyyMMddHHmmss Z", Locale.getDefault())
+            dateFormatThreadLocal.set(df)
+        }
+        return df.parse(s)?.time?.div(1000)?.toInt() ?: 0
     }
 
     fun parse(inputStream: InputStream): Map<String, List<EPG>> {
