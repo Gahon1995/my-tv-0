@@ -23,11 +23,14 @@ class ErrorFragment : Fragment() {
 
         val application = requireActivity().applicationContext as MyTVApplication
 
-        // FrameLayout 根固定铺满（match_parent），内部 panel 靠 gravity="center" 居中
+        // FrameLayout 根固定铺满（match_parent），内部 panel 靠 gravity 居中。
+        // 必须在代码里显式设置 gravity=center：error.xml 的 android:gravity 在 Fragment
+        // show/hide 复用时会被丢失/重置，导致提示框落到左上角。
         _binding!!.root.layoutParams = FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT
         )
+        _binding!!.root.gravity = android.view.Gravity.CENTER
 
         binding.logo.layoutParams.width = application.px2Px(binding.logo.layoutParams.width)
         binding.logo.layoutParams.height = application.px2Px(binding.logo.layoutParams.height)
