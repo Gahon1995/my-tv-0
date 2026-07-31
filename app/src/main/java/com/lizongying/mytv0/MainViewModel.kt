@@ -167,26 +167,26 @@ class MainViewModel : ViewModel() {
             return
         }
 
-        for (tvModel in listModel) {
-            var name = tvModel.tv.name
-            if (name.isEmpty()) {
-                name = tvModel.tv.title
-            }
-            val url = tvModel.tv.logo
-            val logoBase = SP.logoBaseUrl?.trim()?.trimEnd('/') ?: ""
-            var urls =
-                (if (logoBase.isNotEmpty()) getUrls("$logoBase/$name.png") else emptyList()) +
-                        listOf(
-                            "https://live.fanmingming.cn/tv/$name.png"
-                        ) + getUrls("https://raw.githubusercontent.com/fanmingming/live/main/tv/$name.png")
-            if (url.isNotEmpty()) {
-                urls = (getUrls(url) + urls).distinct()
-            }
+        val logoBase = SP.logoBaseUrl?.trim()?.trimEnd('/') ?: ""
 
-            imageHelper.preloadImage(
-                name,
-                urls,
-            )
+        // 并发预加载，大幅加速台标下载
+        viewModelScope.launch {
+            listModel.map { tvModel ->
+                val name = tvModel.tv.name.ifEmpty { tvModel.tv.title }
+                val url = tvModel.tv.logo
+                var urls =
+                    (if (logoBase.isNotEmpty()) getUrls("$logoBase/$name.png") else emptyList()) +
+                            listOf(
+                                "https://live.fanmingming.cn/tv/$name.png"
+                            ) + getUrls("https://raw.githubusercontent.com/fanmingming/live/main/tv/$name.png")
+                if (url.isNotEmpty()) {
+                    urls = (getUrls(url) + urls).distinct()
+                }
+
+                launch {
+                    imageHelper.preloadImage(name, urls)
+                }
+            }
         }
     }
 
