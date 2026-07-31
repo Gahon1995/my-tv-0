@@ -133,17 +133,4 @@ class GlassPanelLayout @JvmOverloads constructor(
         }
         super.dispatchDraw(canvas)
     }
-
-    @SuppressLint("NewApi")
-    private fun applyGlassEffect() {
-        if (glassApplied) return
-        if (!SP.glassBlur || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
-        glassApplied = true
-        try {
-            val effect = RenderEffect.createBlurEffect(24f, 24f, Shader.TileMode.CLAMP)
-            setRenderEffect(effect)
-        } catch (_: Exception) {
-            // 降级到纯色模式
-        }
-    }
 }

@@ -90,14 +90,14 @@ class ListAdapter(
             }
         }
 
-        view.setOnTouchListener(v@{ _: View?, event: MotionEvent? ->
-            event ?: return@setOnTouchListener false
-            if (event.action == MotionEvent.ACTION_UP) {
-                v.performClick()
-                return@setOnTouchListener true
+        view.setOnTouchListener { _, event ->
+            if (event?.action == MotionEvent.ACTION_UP) {
+                view.performClick()
+                true
+            } else {
+                false
             }
-            false
-        })
+        }
 
         view.setOnKeyListener { _, keyCode, event: KeyEvent? ->
             if (event?.action == KeyEvent.ACTION_DOWN) {
