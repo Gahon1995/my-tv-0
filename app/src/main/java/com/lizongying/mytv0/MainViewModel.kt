@@ -33,6 +33,9 @@ import com.lizongying.mytv0.showToast
 import io.github.lizongying.Gua
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
@@ -168,10 +171,22 @@ class MainViewModel : ViewModel() {
         }
 
         val logoBase = SP.logoBaseUrl?.trim()?.trimEnd('/') ?: ""
+        val semaphore = Semaphore(4) // 限制并发数，避免卡顿
 
-        // 并发预加载，大幅加速台标下载
+        // 找到当前播放频道的位置，优先加载附近频道
+        val currentIndex = groupModel.getCurrentList()?.let { list ->
+            list.getCurrent()?.tv?.id ?: -1
+        } ?: -1
+
         viewModelScope.launch {
-            listModel.map { tvModel ->
+            // 按距离当前播放频道的远近排序
+            val sorted = listModel.mapIndexed { idx, tvModel -> Pair(idx, tvModel) }
+                .sortedBy { (idx, _) ->
+                    if (currentIndex < 0) idx
+                    else kotlin.math.abs(idx - currentIndex)
+                }
+
+            sorted.map { (_, tvModel) ->
                 val name = tvModel.tv.name.ifEmpty { tvModel.tv.title }
                 val url = tvModel.tv.logo
                 var urls =
@@ -183,10 +198,15 @@ class MainViewModel : ViewModel() {
                     urls = (getUrls(url) + urls).distinct()
                 }
 
-                launch {
-                    imageHelper.preloadImage(name, urls)
+                async {
+                    semaphore.acquire()
+                    try {
+                        imageHelper.preloadImage(name, urls)
+                    } finally {
+                        semaphore.release()
+                    }
                 }
-            }
+            }.awaitAll()
         }
     }
 
