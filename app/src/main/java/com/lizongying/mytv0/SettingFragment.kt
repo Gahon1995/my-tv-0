@@ -176,8 +176,12 @@ class SettingFragment : Fragment() {
         val txtTextSize =
             application.px2PxFont(binding.versionName.textSize)
 
-        binding.content.layoutParams.width =
-            application.px2Px(binding.content.layoutParams.width)
+        // content 宽度为 MATCH_PARENT(-1)，若经 px2Px 换算会被 .toInt() 截断成 0，
+        // 导致设置面板宽度塌为 0 不可见。这里跳过对宽度的换算。
+        if (binding.content.layoutParams.width >= 0) {
+            binding.content.layoutParams.width =
+                application.px2Px(binding.content.layoutParams.width)
+        }
         binding.content.setPadding(
             application.px2Px(binding.content.paddingLeft),
             application.px2Px(binding.content.paddingTop),
