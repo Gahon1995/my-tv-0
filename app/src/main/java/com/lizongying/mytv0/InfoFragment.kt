@@ -33,7 +33,10 @@ class InfoFragment : Fragment() {
 
         val application = requireActivity().applicationContext as MyTVApplication
 
-        binding.info.layoutParams.width = application.px2Px(binding.info.layoutParams.width)
+        // 只对 wrap_content 等正值做 px2Px 换算，跳过 MATCH_PARENT(-1)
+        if (binding.info.layoutParams.width >= 0) {
+            binding.info.layoutParams.width = application.px2Px(binding.info.layoutParams.width)
+        }
         binding.info.layoutParams.height = application.px2Px(binding.info.layoutParams.height)
 
         val layoutParams = binding.info.layoutParams as ViewGroup.MarginLayoutParams

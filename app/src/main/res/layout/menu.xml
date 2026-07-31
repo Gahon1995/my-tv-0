@@ -7,8 +7,9 @@
     android:clickable="true"
     android:focusable="false"
     android:paddingStart="40dp"
-    android:paddingTop="90dp"
-    android:paddingBottom="60dp"
+    android:paddingTop="50dp"
+    android:paddingEnd="40dp"
+    android:paddingBottom="40dp"
     >
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/group"
