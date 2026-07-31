@@ -68,7 +68,8 @@ object SP {
     private const val KEY_GLASS_BLUR = "glass_blur"
 
     const val DEFAULT_CHANNEL_REVERSAL = true
-    const val DEFAULT_CHANNEL_NUM = false // deprecated, channel num display removed    const val DEFAULT_TIME = false
+    const val DEFAULT_CHANNEL_NUM = false // deprecated, channel num display removed
+    const val DEFAULT_TIME = false
     const val DEFAULT_BOOT_STARTUP = false
     const val DEFAULT_CONFIG_URL = ""
     const val DEFAULT_PROXY = ""

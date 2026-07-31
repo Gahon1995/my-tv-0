@@ -155,9 +155,8 @@ class MainViewModel : ViewModel() {
 
         _channelsOk.value = true
 
-        // 延迟后异步拉取远端配置与最新直播源，不阻塞初始起播
+        // 不延迟，立即异步拉取远端配置与最新直播源，不阻塞初始起播
         viewModelScope.launch {
-            kotlinx.coroutines.delay(5_000)
             updateConfig()
         }
     }
