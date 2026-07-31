@@ -16,10 +16,16 @@ import com.lizongying.mytv0.databinding.ListItemBinding
 import com.lizongying.mytv0.models.TVListModel
 import com.lizongying.mytv0.models.TVModel
 import com.lizongying.mytv0.view.ChannelArtFactory
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.Observer
 
 
+/**
+ * 频道列表适配器。
+ *
+ * 注意：本类刻意保持「update() 全量 notifyDataSetChanged」的简单可靠语义。
+ * 此前尝试用 DiffUtil 增量刷新（submitList + 增量 added/removed/changed 观察）会与
+ * RecyclerView 布局时序冲突，触发 "Inconsistency detected" 崩溃以及分组切换后列表残留。
+ * 分组切换必须整表重建，增量刷新收益远小于它带来的稳定性风险。
+ */
 class ListAdapter(
     private val context: Context,
     private val recyclerView: RecyclerView,
@@ -35,53 +41,6 @@ class ListAdapter(
 
     val application = context.applicationContext as MyTVApplication
 
-    // —— 增量事件观察（收藏增删/单行变化局部刷新）——
-    private var observedModel: TVListModel? = null
-    private var lifecycleOwner: LifecycleOwner? = null
-
-    private val addedObserver = Observer<Pair<Int, Int>> { pair ->
-        pair?.let { (index, _) ->
-            notifyInsertedAt(index)
-        }
-    }
-    private val removedObserver = Observer<Pair<Int, Int>> { pair ->
-        pair?.let { (index, _) ->
-            notifyRemovedAt(index)
-        }
-    }
-    private val changedObserver = Observer<Pair<Int, Int>> { pair ->
-        pair?.let { (index, _) ->
-            notifyChangedAt(index)
-        }
-    }
-
-    /** 绑定 LifecycleOwner 后即开始观察当前数据模型的增量事件（收藏增删/单行变化）。 */
-    fun attach(owner: LifecycleOwner) {
-        lifecycleOwner = owner
-        observeCurrentModel()
-    }
-
-    private fun observeCurrentModel() {
-        val owner = lifecycleOwner ?: return
-        val current = listTVModel ?: return
-        if (observedModel === current) return
-        detachObservers()
-        observedModel = current
-        current.added.observe(owner, addedObserver)
-        current.removed.observe(owner, removedObserver)
-        current.changed.observe(owner, changedObserver)
-    }
-
-    private fun detachObservers() {
-        val owner = lifecycleOwner ?: return
-        observedModel?.let { model ->
-            model.added.removeObserver(addedObserver)
-            model.removed.removeObserver(removedObserver)
-            model.changed.removeObserver(changedObserver)
-        }
-        observedModel = null
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val inflater = LayoutInflater.from(context)
         val binding = ListItemBinding.inflate(inflater, parent, false)
@@ -95,18 +54,18 @@ class ListAdapter(
         binding.heart.layoutParams.width = application.px2Px(binding.heart.layoutParams.width)
         binding.heart.layoutParams.height = application.px2Px(binding.heart.layoutParams.height)
 
+        // 监听器只在视图创建时注册一次，避免 onBind 反复新建对象
         val view = binding.root
         view.isFocusable = true
         view.isFocusableInTouchMode = true
 
-        // 监听器只在视图创建时注册一次，避免 onBind 反复新建对象（P0-2）
         binding.heart.setOnClickListener {
             val pos = viewHolder.bindingAdapterPosition
             if (pos != RecyclerView.NO_POSITION) {
-                val model = listTVModel?.getTVModel(pos)
-                model?.let { tvModel ->
-                    tvModel.setLike(!(tvModel.like.value as Boolean))
-                    viewHolder.like(tvModel.like.value as Boolean)
+                val tvModel = listTVModel?.getTVModel(pos)
+                tvModel?.let {
+                    it.setLike(!(it.like.value as Boolean))
+                    viewHolder.like(it.like.value as Boolean)
                 }
             }
         }
@@ -114,7 +73,8 @@ class ListAdapter(
         view.onFocusChangeListener = View.OnFocusChangeListener { v, hasFocus ->
             val pos = viewHolder.bindingAdapterPosition
             if (pos == RecyclerView.NO_POSITION) return@OnFocusChangeListener
-            val tvModel = listTVModel?.getTVModel(pos) ?: return@OnFocusChangeListener
+            val tvModel = listTVModel?.getTVModel(pos)
+            if (tvModel == null) return@OnFocusChangeListener
             listener?.onItemFocusChange(tvModel, hasFocus)
 
             if (hasFocus) {
@@ -161,10 +121,10 @@ class ListAdapter(
                         return@setOnKeyListener true
                     }
                     if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                        val model = listTVModel?.getTVModel(pos)
-                        model?.let { tvModel ->
-                            tvModel.setLike(!(tvModel.like.value as Boolean))
-                            viewHolder.like(tvModel.like.value as Boolean)
+                        val tvModel = listTVModel?.getTVModel(pos)
+                        tvModel?.let {
+                            it.setLike(!(it.like.value as Boolean))
+                            viewHolder.like(it.like.value as Boolean)
                         }
                         return@setOnKeyListener true
                     }
@@ -199,38 +159,10 @@ class ListAdapter(
         }
     }
 
-    /**
-     * 切换到指定列表（分组切换/聚焦切换/初次加载）。
-     *
-     * 采用同步全量刷新 notifyDataSetChanged：分组切换本属于整表重建，且同步派发
-     * 不会与增量事件（added/removed/changed）在下一帧 post 里产生 RecyclerView
-     * 状态机不一致（曾因 update 用 recyclerView.post + 增量 notify 混用触发
-     * "Inconsistency detected" 崩溃）。收藏增删/单行变化由下方增量 observers 局部刷新。
-     */
     fun update(listTVModel: TVListModel) {
         this.listTVModel = listTVModel
-        observeCurrentModel()
-        notifyDataSetChanged()
-    }
-
-    /** 单行精确刷新（用于收藏状态行内变化），由外部 TVListModel 增量事件触发。 */
-    fun notifyChangedAt(position: Int) {
-        if (position in 0 until itemCount) {
-            notifyItemChanged(position)
-        }
-    }
-
-    /** 单行插入。 */
-    fun notifyInsertedAt(position: Int) {
-        if (position in 0..itemCount) {
-            notifyItemInserted(position)
-        }
-    }
-
-    /** 单行删除（模型已先行删项，此处用包含计数边界的范围，避免丢掉末位删除）。 */
-    fun notifyRemovedAt(position: Int) {
-        if (position in 0..itemCount) {
-            notifyItemRemoved(position)
+        recyclerView.post {
+            notifyDataSetChanged()
         }
     }
 
@@ -239,25 +171,14 @@ class ListAdapter(
         recyclerView.invalidate()
     }
 
-    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-        super.onDetachedFromRecyclerView(recyclerView)
-        detachObservers()
-    }
-
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
-        listTVModel?.let { model ->
-            val tvModel = model.getTVModel(position)
+        listTVModel?.let {
+            val tvModel = it.getTVModel(position)!!
             val view = viewHolder.itemView
 
             if (!defaultFocused && position == defaultFocus) {
                 view.requestFocus()
                 defaultFocused = true
-            }
-
-            // 位置可能在增量刷新瞬间与模型脱节，越界时渲染空行，避免 IndexOutOfBounds
-            if (tvModel == null) {
-                viewHolder.bindTitle("")
-                return@let
             }
 
             viewHolder.like(tvModel.like.value as Boolean)

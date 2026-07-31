@@ -36,10 +36,6 @@ class TVListModel(private val name: String, private val groupIndex: Int) : ViewM
     private val tvListValue: List<TVModel>
         get() = _tvList.value ?: emptyList()
 
-    /** 供适配器取当前列表做 DiffUtil 增量对比。 */
-    val tvListSnapshot: List<TVModel>
-        get() = _tvList.value ?: emptyList()
-
     private val _position = MutableLiveData<Int>()
     val position: LiveData<Int>
         get() = _position
@@ -114,10 +110,6 @@ class TVListModel(private val name: String, private val groupIndex: Int) : ViewM
             }
 
             _added.value = Pair(tvListValue.size - 1, version)
-            version++
-        } else {
-            // 已存在（如收藏状态更新）：发出 change 通知，让列表局部刷新该行
-            _changed.value = Pair(index, version)
             version++
         }
     }
