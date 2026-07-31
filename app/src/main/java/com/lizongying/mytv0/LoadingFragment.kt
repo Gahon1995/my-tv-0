@@ -21,16 +21,12 @@ class LoadingFragment : Fragment() {
 
         val application = requireActivity().applicationContext as MyTVApplication
 
-        binding.bar.layoutParams.width = application.px2Px(binding.bar.layoutParams.width)
-        binding.bar.layoutParams.height = application.px2Px(binding.bar.layoutParams.height)
+        val barW = application.px2Px(binding.bar.layoutParams.width)
+        val barH = application.px2Px(binding.bar.layoutParams.height)
 
-        // 根铺满 + 代码显式居中：Fragment show/hide 复用会丢失 XML 的 gravity，
-        // 需同 ErrorFragment 一样在代码里强制 gravity=center。
-        _binding!!.root.layoutParams = FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
-        _binding!!.root.gravity = Gravity.CENTER
+        // 直接用带 gravity 的 FrameLayout.LayoutParams 把孩子定位到根的中心，
+        // 不依赖根 XML 上可能在 Fragment show/hide 复用中被丢弃的 gravity。
+        binding.bar.layoutParams = FrameLayout.LayoutParams(barW, barH, Gravity.CENTER)
 
         return binding.root
     }
