@@ -10,7 +10,6 @@ import android.view.ViewGroup
 import android.view.ViewGroup.FOCUS_BEFORE_DESCENDANTS
 import android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.lizongying.mytv0.databinding.ListItemBinding
@@ -43,25 +42,17 @@ class ListAdapter(
     private val addedObserver = Observer<Pair<Int, Int>> { pair ->
         pair?.let { (index, _) ->
             notifyInsertedAt(index)
-            syncBoundListFromCurrent()
         }
     }
     private val removedObserver = Observer<Pair<Int, Int>> { pair ->
         pair?.let { (index, _) ->
             notifyRemovedAt(index)
-            syncBoundListFromCurrent()
         }
     }
     private val changedObserver = Observer<Pair<Int, Int>> { pair ->
         pair?.let { (index, _) ->
             notifyChangedAt(index)
-            syncBoundListFromCurrent()
         }
-    }
-
-    /** 让 DiffUtil 用于对比的快照与模型当前数据保持同步，避免增量后重复移除。 */
-    private fun syncBoundListFromCurrent() {
-        listTVModel?.let { boundList = it.tvListSnapshot }
     }
 
     /** 绑定 LifecycleOwner 后即开始观察当前数据模型的增量事件（收藏增删/单行变化）。 */
@@ -208,50 +199,18 @@ class ListAdapter(
         }
     }
 
-    // 缓存当前展示的列表，供 DiffUtil 与原列表做增量对比
-    private var boundList: List<TVModel> = emptyList()
-
     /**
-     * 用 DiffUtil 计算差异并做增量刷新：
-     * 收藏增删、单行 like 变化只会触发 insert/remove/change，而不是整表重绘。
-     * 列表切换（group 变化）时也可安全调用——DiffUtil 会退回整表刷新。
+     * 切换到指定列表（分组切换/聚焦切换/初次加载）。
+     *
+     * 采用同步全量刷新 notifyDataSetChanged：分组切换本属于整表重建，且同步派发
+     * 不会与增量事件（added/removed/changed）在下一帧 post 里产生 RecyclerView
+     * 状态机不一致（曾因 update 用 recyclerView.post + 增量 notify 混用触发
+     * "Inconsistency detected" 崩溃）。收藏增删/单行变化由下方增量 observers 局部刷新。
      */
     fun update(listTVModel: TVListModel) {
         this.listTVModel = listTVModel
-        val newList = listTVModel.tvListSnapshot
         observeCurrentModel()
-        recyclerView.post {
-            submitList(newList)
-        }
-    }
-
-    private fun submitList(newList: List<TVModel>) {
-        val oldList = boundList
-        if (oldList.isEmpty() && newList.isEmpty()) return
-
-        val result: DiffUtil.DiffResult = DiffUtil.calculateDiff(
-            object : DiffUtil.Callback() {
-                override fun getOldListSize() = oldList.size
-                override fun getNewListSize() = newList.size
-
-                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                    return oldList[oldItemPosition].tv.id == newList[newItemPosition].tv.id
-                }
-
-                override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                    val oldM = oldList[oldItemPosition]
-                    val newM = newList[newItemPosition]
-                    return oldM.tv.id == newM.tv.id
-                            && oldM.like.value == newM.like.value
-                            && oldM.tv.title == newM.tv.title
-                            && oldM.tv.logo == newM.tv.logo
-                }
-            },
-            // 单个小规模数据源差异用同步计算即可；大数据源也没有可观延迟
-            false
-        )
-        result.dispatchUpdatesTo(this)
-        boundList = newList.toList()
+        notifyDataSetChanged()
     }
 
     /** 单行精确刷新（用于收藏状态行内变化），由外部 TVListModel 增量事件触发。 */
@@ -268,9 +227,9 @@ class ListAdapter(
         }
     }
 
-    /** 单行删除。 */
+    /** 单行删除（模型已先行删项，此处用包含计数边界的范围，避免丢掉末位删除）。 */
     fun notifyRemovedAt(position: Int) {
-        if (position in 0 until itemCount) {
+        if (position in 0..itemCount) {
             notifyItemRemoved(position)
         }
     }
@@ -286,8 +245,8 @@ class ListAdapter(
     }
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
-        listTVModel?.let {
-            val tvModel = it.getTVModel(position)
+        listTVModel?.let { model ->
+            val tvModel = model.getTVModel(position)
             val view = viewHolder.itemView
 
             if (!defaultFocused && position == defaultFocus) {
@@ -295,7 +254,13 @@ class ListAdapter(
                 defaultFocused = true
             }
 
-            viewHolder.like(tvModel!!.like.value as Boolean)
+            // 位置可能在增量刷新瞬间与模型脱节，越界时渲染空行，避免 IndexOutOfBounds
+            if (tvModel == null) {
+                viewHolder.bindTitle("")
+                return@let
+            }
+
+            viewHolder.like(tvModel.like.value as Boolean)
             viewHolder.bindTitle(tvModel.tv.title)
             viewHolder.bindImage(tvModel)
         }
