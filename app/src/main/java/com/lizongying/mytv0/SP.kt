@@ -67,7 +67,7 @@ object SP {
     private const val KEY_USER_OVERRIDE_CONFIG = "user_override_config"
     private const val KEY_GLASS_BLUR = "glass_blur"
 
-    const val DEFAULT_CHANNEL_REVERSAL = false
+    const val DEFAULT_CHANNEL_REVERSAL = true
     const val DEFAULT_CHANNEL_NUM = false
     const val DEFAULT_TIME = false
     const val DEFAULT_BOOT_STARTUP = false

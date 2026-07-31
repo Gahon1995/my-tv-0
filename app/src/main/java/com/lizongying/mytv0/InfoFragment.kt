@@ -137,7 +137,7 @@ class InfoFragment : Fragment() {
                 binding.epgTimeEnd.visibility = View.GONE
             }
         } else {
-            binding.desc.text = "精彩節目"
+            binding.desc.text = "精彩节目"
             binding.epgProgress.visibility = View.GONE
             binding.epgTimeStart.visibility = View.GONE
             binding.epgTimeEnd.visibility = View.GONE
