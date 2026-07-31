@@ -35,8 +35,12 @@ class ChannelFragment : Fragment() {
 
         val application = requireActivity().applicationContext as MyTVApplication
 
-        binding.channel.layoutParams.width = application.px2Px(binding.channel.layoutParams.width)
-        binding.channel.layoutParams.height = application.px2Px(binding.channel.layoutParams.height)
+        if (binding.channel.layoutParams.width >= 0) {
+            binding.channel.layoutParams.width = application.px2Px(binding.channel.layoutParams.width)
+        }
+        if (binding.channel.layoutParams.height >= 0) {
+            binding.channel.layoutParams.height = application.px2Px(binding.channel.layoutParams.height)
+        }
 
         val layoutParams = binding.channel.layoutParams as ViewGroup.MarginLayoutParams
         layoutParams.topMargin = application.px2Px(binding.channel.marginTop)

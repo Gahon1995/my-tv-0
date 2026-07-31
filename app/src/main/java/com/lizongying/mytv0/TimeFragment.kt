@@ -35,7 +35,9 @@ class TimeFragment : Fragment() {
 
         val application = requireActivity().applicationContext as MyTVApplication
 
-        binding.timeCapsule.layoutParams.height = application.px2Px(binding.timeCapsule.layoutParams.height)
+        if (binding.timeCapsule.layoutParams.height >= 0) {
+            binding.timeCapsule.layoutParams.height = application.px2Px(binding.timeCapsule.layoutParams.height)
+        }
 
         val layoutParams = binding.timeCapsule.layoutParams as ViewGroup.MarginLayoutParams
         layoutParams.topMargin = application.px2Px(binding.timeCapsule.marginTop)

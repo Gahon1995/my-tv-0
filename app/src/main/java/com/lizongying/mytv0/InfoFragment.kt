@@ -46,7 +46,9 @@ class InfoFragment : Fragment() {
         binding.logo.layoutParams.width = application.px2Px(binding.logo.layoutParams.width)
         var padding = application.px2Px(binding.logo.paddingTop)
         binding.logo.setPadding(padding, padding, padding, padding)
-        binding.main.layoutParams.width = application.px2Px(binding.main.layoutParams.width)
+        if (binding.main.layoutParams.width >= 0) {
+            binding.main.layoutParams.width = application.px2Px(binding.main.layoutParams.width)
+        }
         padding = application.px2Px(binding.main.paddingTop)
         binding.main.setPadding(padding, padding, padding, padding)
 
