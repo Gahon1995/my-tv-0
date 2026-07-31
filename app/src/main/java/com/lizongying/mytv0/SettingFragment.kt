@@ -154,17 +154,6 @@ class SettingFragment : Fragment() {
             mainActivity.settingActive()
         }
 
-        binding.appreciate.setOnClickListener {
-            val imageModalFragment = ModalFragment()
-
-            val args = Bundle()
-            args.putInt(ModalFragment.KEY_DRAWABLE_ID, R.drawable.appreciate)
-            imageModalFragment.arguments = args
-
-            imageModalFragment.show(requireFragmentManager(), ModalFragment.TAG)
-            mainActivity.settingActive()
-        }
-
         binding.setting.setOnClickListener {
             hideSelf()
         }
@@ -211,7 +200,6 @@ class SettingFragment : Fragment() {
             binding.clear,
             binding.checkVersion,
             binding.exit,
-            binding.appreciate,
         )) {
             i.textSize = txtTextSize
             i.setOnFocusChangeListener { _, hasFocus ->

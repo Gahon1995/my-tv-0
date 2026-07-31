@@ -11,7 +11,7 @@
         android:layout_height="match_parent"
         >
 
-        <!-- 时间+频道号合并胶囊 -->
+        <!-- 时间胶囊 -->
         <LinearLayout
             android:id="@+id/time_capsule"
             android:layout_width="wrap_content"
@@ -34,14 +34,6 @@
                 android:textSize="28sp"
                 android:fontFeatureSettings="tnum"
                 tools:text="23:15" />
-            <androidx.appcompat.widget.AppCompatTextView
-                android:id="@+id/channel_tag"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:textColor="@color/description_blur"
-                android:textSize="16sp"
-                tools:text="CCTV-1" />
         </LinearLayout>
     </FrameLayout>
 </LinearLayout>

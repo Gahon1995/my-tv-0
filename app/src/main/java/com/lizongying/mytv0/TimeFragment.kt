@@ -43,7 +43,6 @@ class TimeFragment : Fragment() {
         binding.timeCapsule.layoutParams = layoutParams
 
         binding.content.textSize = application.px2PxFont(binding.content.textSize)
-        binding.channelTag.textSize = application.px2PxFont(binding.channelTag.textSize)
 
         binding.main.layoutParams.width = application.shouldWidthPx()
         binding.main.layoutParams.height = application.shouldHeightPx()
@@ -58,10 +57,6 @@ class TimeFragment : Fragment() {
         job = viewLifecycleOwner.lifecycleScope.launch {
             while (isActive) {
                 binding.content.text = viewModel.getTime()
-                // 更新频道标签
-                viewModel.groupModel.getCurrent()?.let {
-                    binding.channelTag.text = it.tv.title
-                }
                 delay(delay)
             }
         }
@@ -83,9 +78,6 @@ class TimeFragment : Fragment() {
             job = viewLifecycleOwner.lifecycleScope.launch {
                 while (isActive) {
                     binding.content.text = viewModel.getTime()
-                    viewModel.groupModel.getCurrent()?.let {
-                        binding.channelTag.text = it.tv.title
-                    }
                     delay(delay)
                 }
             }

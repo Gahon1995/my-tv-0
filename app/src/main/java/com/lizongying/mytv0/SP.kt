@@ -69,7 +69,7 @@ object SP {
 
     const val DEFAULT_CHANNEL_REVERSAL = false
     const val DEFAULT_CHANNEL_NUM = false
-    const val DEFAULT_TIME = true
+    const val DEFAULT_TIME = false
     const val DEFAULT_BOOT_STARTUP = false
     const val DEFAULT_CONFIG_URL = ""
     const val DEFAULT_PROXY = ""
@@ -229,7 +229,7 @@ object SP {
         get() = sp.getString(KEY_SOURCES, DEFAULT_SOURCES)
         set(value) = sp.edit().putString(KEY_SOURCES, value).apply()
 
-    const val DEFAULT_REMOTE_CONFIG_SERVER = "https://iptv.p.gahon.top"
+    const val DEFAULT_REMOTE_CONFIG_SERVER = ""
 
     var remoteConfigServer: String?
         get() = sp.getString(KEY_REMOTE_CONFIG_SERVER, DEFAULT_REMOTE_CONFIG_SERVER)

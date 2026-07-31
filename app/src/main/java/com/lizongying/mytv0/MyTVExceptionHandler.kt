@@ -34,47 +34,7 @@ class MyTVExceptionHandler(val context: Context) : Thread.UncaughtExceptionHandl
     }
 
     private suspend fun saveCrashInfoToFile(crashInfo: String) {
-        if (isLimit()) {
-            Log.e(TAG, crashInfo)
-        } else {
-            try {
-                saveLog(crashInfo)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    private fun isLimit(): Boolean {
-        if (context.appVersionName != SP.version) {
-            SP.version = context.appVersionName
-            SP.logTimes = SP.DEFAULT_LOG_TIMES
-            return false
-        } else {
-            SP.logTimes--
-            return SP.logTimes < 0
-        }
-    }
-
-    private suspend fun saveLog(crashInfo: String) {
-        withContext(Dispatchers.IO) {
-            try {
-                val request = okhttp3.Request.Builder()
-                    .url("https://lyrics.run/my-tv-0/v1/log")
-                    .method("POST", crashInfo.toRequestBody("text/plain".toMediaType()))
-                    .build()
-
-                HttpClient.okHttpClient.newCall(request).execute().use { response ->
-                    if (response.isSuccessful) {
-                        Log.i(TAG, "log success")
-                    } else {
-                        Log.e(TAG, "log failed: ${response.codeAlias()}")
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+        Log.e(TAG, crashInfo)
     }
 
     companion object {
