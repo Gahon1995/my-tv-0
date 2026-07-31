@@ -10,12 +10,15 @@ import android.view.ViewGroup
 import android.view.ViewGroup.FOCUS_BEFORE_DESCENDANTS
 import android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.lizongying.mytv0.databinding.ListItemBinding
 import com.lizongying.mytv0.models.TVListModel
 import com.lizongying.mytv0.models.TVModel
 import com.lizongying.mytv0.view.ChannelArtFactory
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.Observer
 
 
 class ListAdapter(
@@ -32,6 +35,61 @@ class ListAdapter(
     var visible = false
 
     val application = context.applicationContext as MyTVApplication
+
+    // —— 增量事件观察（收藏增删/单行变化局部刷新）——
+    private var observedModel: TVListModel? = null
+    private var lifecycleOwner: LifecycleOwner? = null
+
+    private val addedObserver = Observer<Pair<Int, Int>> { pair ->
+        pair?.let { (index, _) ->
+            notifyInsertedAt(index)
+            syncBoundListFromCurrent()
+        }
+    }
+    private val removedObserver = Observer<Pair<Int, Int>> { pair ->
+        pair?.let { (index, _) ->
+            notifyRemovedAt(index)
+            syncBoundListFromCurrent()
+        }
+    }
+    private val changedObserver = Observer<Pair<Int, Int>> { pair ->
+        pair?.let { (index, _) ->
+            notifyChangedAt(index)
+            syncBoundListFromCurrent()
+        }
+    }
+
+    /** 让 DiffUtil 用于对比的快照与模型当前数据保持同步，避免增量后重复移除。 */
+    private fun syncBoundListFromCurrent() {
+        listTVModel?.let { boundList = it.tvListSnapshot }
+    }
+
+    /** 绑定 LifecycleOwner 后即开始观察当前数据模型的增量事件（收藏增删/单行变化）。 */
+    fun attach(owner: LifecycleOwner) {
+        lifecycleOwner = owner
+        observeCurrentModel()
+    }
+
+    private fun observeCurrentModel() {
+        val owner = lifecycleOwner ?: return
+        val current = listTVModel ?: return
+        if (observedModel === current) return
+        detachObservers()
+        observedModel = current
+        current.added.observe(owner, addedObserver)
+        current.removed.observe(owner, removedObserver)
+        current.changed.observe(owner, changedObserver)
+    }
+
+    private fun detachObservers() {
+        val owner = lifecycleOwner ?: return
+        observedModel?.let { model ->
+            model.added.removeObserver(addedObserver)
+            model.removed.removeObserver(removedObserver)
+            model.changed.removeObserver(changedObserver)
+        }
+        observedModel = null
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val inflater = LayoutInflater.from(context)
@@ -150,16 +208,81 @@ class ListAdapter(
         }
     }
 
+    // 缓存当前展示的列表，供 DiffUtil 与原列表做增量对比
+    private var boundList: List<TVModel> = emptyList()
+
+    /**
+     * 用 DiffUtil 计算差异并做增量刷新：
+     * 收藏增删、单行 like 变化只会触发 insert/remove/change，而不是整表重绘。
+     * 列表切换（group 变化）时也可安全调用——DiffUtil 会退回整表刷新。
+     */
     fun update(listTVModel: TVListModel) {
         this.listTVModel = listTVModel
+        val newList = listTVModel.tvListSnapshot
+        observeCurrentModel()
         recyclerView.post {
-            notifyDataSetChanged()
+            submitList(newList)
+        }
+    }
+
+    private fun submitList(newList: List<TVModel>) {
+        val oldList = boundList
+        if (oldList.isEmpty() && newList.isEmpty()) return
+
+        val result: DiffUtil.DiffResult = DiffUtil.calculateDiff(
+            object : DiffUtil.Callback() {
+                override fun getOldListSize() = oldList.size
+                override fun getNewListSize() = newList.size
+
+                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                    return oldList[oldItemPosition].tv.id == newList[newItemPosition].tv.id
+                }
+
+                override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                    val oldM = oldList[oldItemPosition]
+                    val newM = newList[newItemPosition]
+                    return oldM.tv.id == newM.tv.id
+                            && oldM.like.value == newM.like.value
+                            && oldM.tv.title == newM.tv.title
+                            && oldM.tv.logo == newM.tv.logo
+                }
+            },
+            // 单个小规模数据源差异用同步计算即可；大数据源也没有可观延迟
+            false
+        )
+        result.dispatchUpdatesTo(this)
+        boundList = newList.toList()
+    }
+
+    /** 单行精确刷新（用于收藏状态行内变化），由外部 TVListModel 增量事件触发。 */
+    fun notifyChangedAt(position: Int) {
+        if (position in 0 until itemCount) {
+            notifyItemChanged(position)
+        }
+    }
+
+    /** 单行插入。 */
+    fun notifyInsertedAt(position: Int) {
+        if (position in 0..itemCount) {
+            notifyItemInserted(position)
+        }
+    }
+
+    /** 单行删除。 */
+    fun notifyRemovedAt(position: Int) {
+        if (position in 0 until itemCount) {
+            notifyItemRemoved(position)
         }
     }
 
     fun clear() {
         focused?.clearFocus()
         recyclerView.invalidate()
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView)
+        detachObservers()
     }
 
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {

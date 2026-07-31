@@ -75,6 +75,7 @@ class MenuFragment : Fragment(), GroupAdapter.ItemListener, ListAdapter.ItemList
             listWidth
         }
         listAdapter.setItemListener(this)
+        listAdapter.attach(this)   // 观察收藏增删的增量事件，实现列表局部刷新
 
         binding.menu.setOnClickListener {
             hideSelf()
