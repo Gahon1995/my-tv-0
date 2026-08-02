@@ -170,7 +170,6 @@ class MainViewModel : ViewModel() {
             return
         }
 
-        val logoBase = SP.logoBaseUrl?.trim()?.trimEnd('/') ?: ""
         val semaphore = Semaphore(4) // 限制并发数，避免卡顿
 
         // 找到当前播放频道的位置，优先加载附近频道
@@ -188,15 +187,7 @@ class MainViewModel : ViewModel() {
 
             sorted.map { (_, tvModel) ->
                 val name = tvModel.tv.name.ifEmpty { tvModel.tv.title }
-                val url = tvModel.tv.logo
-                var urls =
-                    (if (logoBase.isNotEmpty()) getUrls("$logoBase/$name.png") else emptyList()) +
-                            listOf(
-                                "https://live.fanmingming.cn/tv/$name.png"
-                            ) + getUrls("https://raw.githubusercontent.com/fanmingming/live/main/tv/$name.png")
-                if (url.isNotEmpty()) {
-                    urls = (getUrls(url) + urls).distinct()
-                }
+                val urls = imageHelper.logoUrlCandidates(name, tvModel.tv.logo)
 
                 async {
                     semaphore.acquire()

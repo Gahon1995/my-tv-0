@@ -33,6 +33,14 @@ object HttpClient {
         createBuilder()
     }
 
+    /** 台标等小图专用 client：独立短超时，不影响全局直播流超时。 */
+    val logoClient: OkHttpClient by lazy {
+        createBuilder()
+            .connectTimeout(8, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(8, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+    }
+
     fun getClientWithProxy(): OkHttpClient {
         clientCache[SP.proxy]?.let {
             return it
