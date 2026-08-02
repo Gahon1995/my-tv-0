@@ -55,8 +55,11 @@ class ImageHelper(private val context: Context) {
     private fun mirrorCandidates(raw: String): List<String> {
         val out = mutableListOf(raw)
         if (raw.startsWith("https://live.fanmingming.cn/")) {
-            val file = raw.removePrefix("https://live.fanmingming.cn/") // tv/CCTV1.png
-            RAW_MIRRORS.forEach { out += "$it$FANMINGMING_RAW/$file" }
+            // 例：https://live.fanmingming.cn/tv/CGTN西语.png → tv/CGTN西语.png
+            var path = raw.removePrefix("https://live.fanmingming.cn/")
+            // github 镜像路径已含 /tv，去掉 path 开头的 tv/ 避免双 tv/
+            if (path.startsWith("tv/")) path = path.removePrefix("tv/")
+            RAW_MIRRORS.forEach { out += "$it$FANMINGMING_RAW/$path" }
         }
         return out
     }
