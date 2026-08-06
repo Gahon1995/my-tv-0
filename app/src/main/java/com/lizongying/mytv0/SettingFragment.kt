@@ -136,7 +136,8 @@ class SettingFragment : Fragment() {
         }
 
         binding.checkVersion.setOnClickListener {
-            requestInstallPermissions()
+            // 检查更新不必前置申请安装权限（权限只影响下载后的安装环节）
+            updateManager.checkAndUpdate()
             mainActivity.settingActive()
         }
 

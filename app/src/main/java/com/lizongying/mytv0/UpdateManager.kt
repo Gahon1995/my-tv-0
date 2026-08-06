@@ -178,20 +178,35 @@ class UpdateManager(
             )
             Log.i(TAG, "apkFile $apkFile")
 
-            if (apkFile.exists()) {
-                runCatching {
-                    val apkUri = Uri.fromFile(apkFile)
-                    Log.i(TAG, "apkUri $apkUri")
-                    val installIntent = Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(apkUri, "application/vnd.android.package-archive")
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-
-                    context.startActivity(installIntent)
-                }.onFailure { Log.e(TAG, "start install error", it) }
-            } else {
+            if (!apkFile.exists()) {
                 Log.e(TAG, "APK file does not exist!")
+                return
             }
+
+            // 安装 APK 需要 "安装未知应用" 权限；未开启时引导用户去系统设置开启
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !context.packageManager.canRequestPackageInstalls()) {
+                Log.i(TAG, "REQUEST_INSTALL_PACKAGES not granted, guide to settings")
+                "请允许安装未知应用后再安装".showToast()
+                runCatching {
+                    val intent = Intent(
+                        android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                        Uri.parse("package:${context.packageName}")
+                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                }.onFailure { Log.e(TAG, "open install-source settings failed", it) }
+                return
+            }
+
+            runCatching {
+                val apkUri = Uri.fromFile(apkFile)
+                Log.i(TAG, "apkUri $apkUri")
+                val installIntent = Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(apkUri, "application/vnd.android.package-archive")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+
+                context.startActivity(installIntent)
+            }.onFailure { Log.e(TAG, "start install error", it) }
         }
     }
 
