@@ -77,7 +77,12 @@ class UpdateManager(
                 message = "检查更新失败：${e.message}"
             }
             pendingUpdate = newVersion
-            updateUI(message, hasUpdate)
+            // 只有检测到有更新时才弹窗，其余情况用 Toast 提示
+            if (hasUpdate) {
+                updateUI(message, true)
+            } else {
+                message.showToast()
+            }
         }
     }
 
