@@ -39,6 +39,13 @@ object RemoteConfigManager {
         withContext(Dispatchers.Main) { apply(viewModel, config) }
     }
 
+    /** 立即刷新一次远端配置（获取最新 update/EPG/直播源），网络失败时保留旧缓存。返回刷新后的 config。 */
+    suspend fun refreshNow(): RemoteConfig? {
+        val base = serverBaseUrl() ?: return current
+        fetch(base)?.let { current = it }
+        return current
+    }
+
     private suspend fun fetch(base: String): RemoteConfig? = withContext(Dispatchers.IO) {
         try {
             val builder = okhttp3.Request.Builder().url("$base/api/v1/config")

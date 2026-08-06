@@ -14,21 +14,22 @@ class ConfirmationFragment(
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return activity?.let {
             val builder = AlertDialog.Builder(it)
-            builder.setTitle(message)
             if (update) {
-                builder.setMessage("确定更新吗？")
+                builder.setTitle("发现新版本")
+                    .setMessage(message)
                     .setPositiveButton(
-                        "确定"
+                        "立即更新"
                     ) { _, _ ->
                         listener.onConfirm()
                     }
                     .setNegativeButton(
-                        "取消"
+                        "暂不更新"
                     ) { _, _ ->
                         listener.onCancel()
                     }
             } else {
-                builder.setMessage("")
+                builder.setTitle(message)
+                    .setMessage("")
                     .setNegativeButton(
                         "确定"
                     ) { _, _ ->
