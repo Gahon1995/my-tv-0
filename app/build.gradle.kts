@@ -5,6 +5,14 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
+/** 从环境变量读取固定签名信息（keystore 路径/密码/alias），用于稳定签名。
+ *  缺省时回退到 AGP 自动生成的 debug keystore（仅保证可编译，签名不稳定）。
+ */
+val stableStoreFile = System.getenv("MYTV_KEYSTORE_PATH").orEmpty().takeIf { it.isNotEmpty() }
+val stableStorePwd = System.getenv("MYTV_KEYSTORE_PASSWORD").orEmpty()
+val stableKeyAlias = System.getenv("MYTV_KEY_ALIAS").orEmpty()
+val stableKeyPwd = System.getenv("MYTV_KEY_PASSWORD").orEmpty()
+
 android {
     namespace = "com.lizongying.mytv0"
     compileSdk = 35
@@ -21,7 +29,22 @@ android {
         viewBinding = true
     }
 
+    signingConfigs {
+        if (stableStoreFile != null && stableStorePwd.isNotEmpty() && stableKeyAlias.isNotEmpty() && stableKeyPwd.isNotEmpty()) {
+            create("stableMytv") {
+                storeFile = file(stableStoreFile)
+                storePassword = stableStorePwd
+                keyAlias = stableKeyAlias
+                keyPassword = stableKeyPwd
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            // 固定签名：避免每次新建 Docker 容器后 AGP 重新生成 debug keystore 导致签名变化
+            signingConfig = signingConfigs.findByName("stableMytv")
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(

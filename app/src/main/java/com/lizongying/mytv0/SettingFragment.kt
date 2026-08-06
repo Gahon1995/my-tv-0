@@ -52,7 +52,6 @@ class SettingFragment : Fragment() {
         _binding = SettingBinding.inflate(inflater, container, false)
 
         binding.versionName.text = "v${context.appVersionName}"
-        binding.version.text = "https://github.com/lizongying/my-tv-0"
 
         val switchChannelReversal = _binding?.switchChannelReversal
         switchChannelReversal?.isChecked = SP.channelReversal
@@ -173,11 +172,6 @@ class SettingFragment : Fragment() {
         )
 
         binding.name.textSize = application.px2PxFont(binding.name.textSize)
-        binding.version.textSize = txtTextSize
-        val layoutParamsVersion = binding.version.layoutParams as ViewGroup.MarginLayoutParams
-        layoutParamsVersion.topMargin = application.px2Px(binding.version.marginTop)
-        layoutParamsVersion.bottomMargin = application.px2Px(binding.version.marginBottom)
-        binding.version.layoutParams = layoutParamsVersion
 
         val btnWidth =
             application.px2Px(binding.confirmConfig.layoutParams.width)

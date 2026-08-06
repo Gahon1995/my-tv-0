@@ -63,6 +63,7 @@
                 android:layout_marginStart="8dp"
                 android:maxLines="1"
                 android:ellipsize="end"
+                android:visibility="gone"
                 />
         </LinearLayout>
 
