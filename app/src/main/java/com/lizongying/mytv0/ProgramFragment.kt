@@ -7,10 +7,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.lizongying.mytv0.data.EPG
 import com.lizongying.mytv0.databinding.ProgramBinding
+import com.lizongying.mytv0.models.TVModel
 
 class ProgramFragment : Fragment(), ProgramAdapter.ItemListener {
     private var _binding: ProgramBinding? = null
@@ -22,6 +24,16 @@ class ProgramFragment : Fragment(), ProgramAdapter.ItemListener {
     private lateinit var programAdapter: ProgramAdapter
 
     private lateinit var viewModel: MainViewModel
+
+    // 跟踪当前 TVModel 以便管理 EPG LiveData 观察者
+    private var currentTvModel: TVModel? = null
+
+    private val epgObserver = Observer<List<EPG>> { epgList ->
+        if (isHidden) return@Observer
+        if (epgList != null && epgList.isNotEmpty()) {
+            bindEPG(epgList)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -54,31 +66,46 @@ class ProgramFragment : Fragment(), ProgramAdapter.ItemListener {
     }
 
     fun onVisible() {
-        val context = requireActivity()
+        val ctx = requireActivity()
 
-        viewModel.groupModel.getCurrent()?.let {
-            val index = it.epgValue.indexOfFirst { it.endTime > Utils.getDateTimestamp() }
-            programAdapter = ProgramAdapter(
-                context,
-                binding.list,
-                it.epgValue,
-                index,
-            )
-            binding.list.adapter = programAdapter
-            binding.list.layoutManager = LinearLayoutManager(context)
+        // 移除旧的观察者，切换到当前播放频道的 EPG LiveData
+        currentTvModel?.epg?.removeObserver(epgObserver)
 
-            programAdapter.setItemListener(this)
+        val tvModel = viewModel.groupModel.getCurrent()
+        currentTvModel = tvModel
 
-            if (index > -1) {
-                programAdapter.scrollToPositionAndSelect(index)
-            }
+        tvModel?.let {
+            // 观察 EPG 数据变化：万一数据在节目单打开后才加载完，列表自动刷新
+            it.epg.observeForever(epgObserver)
 
-            handler.postDelayed(hideRunnable, delay)
+            // 立即渲染已有数据（即使为空也要创建 adapter，否则 RecyclerView 空白）
+            bindEPG(it.epgValue)
+        }
+
+        handler.postDelayed(hideRunnable, delay)
+    }
+
+    /**
+     * 用给定的 EPG 列表刷新 RecyclerView，并自动定位到当前正在播的节目。
+     */
+    private fun bindEPG(epgList: List<EPG>) {
+        val ctx = requireActivity()
+        val index = epgList.indexOfFirst { epg -> epg.endTime > Utils.getDateTimestamp() }
+
+        programAdapter = ProgramAdapter(ctx, binding.list, epgList, index)
+        binding.list.adapter = programAdapter
+        binding.list.layoutManager = LinearLayoutManager(ctx)
+        programAdapter.setItemListener(this)
+
+        if (index > -1) {
+            programAdapter.scrollToPositionAndSelect(index)
         }
     }
 
     fun onHidden() {
         handler.removeCallbacks(hideRunnable)
+        // 隐藏时取消 EPG 观察，避免不可见时触发更新
+        currentTvModel?.epg?.removeObserver(epgObserver)
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
@@ -97,6 +124,8 @@ class ProgramFragment : Fragment(), ProgramAdapter.ItemListener {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        currentTvModel?.epg?.removeObserver(epgObserver)
+        currentTvModel = null
         _binding = null
     }
 

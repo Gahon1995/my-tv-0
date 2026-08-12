@@ -698,13 +698,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        viewModel.groupModel.getCurrent()?.let {
-            if (it.epgValue.isEmpty()) {
-                R.string.epg_is_empty.showToast()
-                return
-            }
-        }
-
+        // 即使 EPG 数据尚未就绪也先展示节目单面板，
+        // ProgramFragment 会通过 LiveData 观察者在数据到达后自动刷新列表。
         showFragment(programFragment)
     }
 
