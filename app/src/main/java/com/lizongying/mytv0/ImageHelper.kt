@@ -2,7 +2,6 @@ package com.lizongying.mytv0
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
 import android.util.Log
 import com.bumptech.glide.Glide
 import com.lizongying.mytv0.requests.HttpClient
@@ -34,8 +33,14 @@ class ImageHelper(private val context: Context) {
         if (!dir.exists()) {
             dir.mkdir()
         }
+        // 兼容旧的无后缀缓存文件 + 新的 .png 后缀文件
         dir.listFiles()?.forEach { file ->
-            files[file.name] = file
+            val key = if (file.name.endsWith(".png")) {
+                file.name.removeSuffix(".png")
+            } else {
+                file.name
+            }
+            files[key] = file
         }
     }
 
@@ -97,6 +102,12 @@ class ImageHelper(private val context: Context) {
     /** 合法台标图像的最小字节数下限，过滤 404 错误页/空文件/占位图污染缓存。 */
     private val MIN_LOGO_BYTES = 500L
 
+    private fun cacheFileForKey(key: String): File {
+        // 加上 .png 后缀，避免小米电视 MediaPlayerFactory 将无扩展名的文件
+        // 误当视频处理而导致 Glide 加载失败
+        return File(cacheDir, "$LOGO/$key.png")
+    }
+
     private suspend fun downloadImage(url: String, file: File): Boolean {
         return withContext(Dispatchers.IO) {
             var tmp: File? = null
@@ -143,9 +154,9 @@ class ImageHelper(private val context: Context) {
         }
 
         for (url in urlList) {
-            val file = File(cacheDir, "$LOGO/$key")
+            val file = cacheFileForKey(key)
             if (downloadImage(url, file)) {
-                files[file.name] = file
+                files[key] = file
                 Log.d(TAG, "downloadImage success $url")
                 break
             }
@@ -197,7 +208,7 @@ class ImageHelper(private val context: Context) {
                 val candidates = logoUrlCandidates(key, url)
                 val ok = withContext(Dispatchers.IO) {
                     for (u in candidates) {
-                        val f = File(cacheDir, "$LOGO/$key")
+                        val f = cacheFileForKey(key)
                         if (downloadImage(u, f)) {
                             files[key] = f
                             return@withContext true
