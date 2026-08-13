@@ -286,7 +286,9 @@ class MainViewModel : ViewModel() {
             withContext(Dispatchers.IO) {
                 try {
                     val request = okhttp3.Request.Builder().url(a).build()
-                    val response = HttpClient.okHttpClient.newCall(request).execute()
+                    // EPG 用独立短超时 client：失效地址（如已下线的图床）快速失败，
+                    // 避免全局默认超时导致兜底地址等待过久
+                    val response = HttpClient.epgClient.newCall(request).execute()
 
                     if (response.isSuccessful) {
                         if (readEPG(response.bodyAlias()!!.byteStream())) {

@@ -41,6 +41,14 @@ object HttpClient {
             .build()
     }
 
+    /** EPG 拉取专用 client：独立短超时，失效地址快速失败以尽快兜底下一个地址。 */
+    val epgClient: OkHttpClient by lazy {
+        createBuilder()
+            .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+    }
+
     fun getClientWithProxy(): OkHttpClient {
         clientCache[SP.proxy]?.let {
             return it
