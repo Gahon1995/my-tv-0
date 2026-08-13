@@ -194,7 +194,8 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     // TODO group position
-                    viewModel.updateEPG()
+                    // EPG 拉取已收口到 MainViewModel.updateConfig()（apply 与源解析完成后统一执行），
+                    // 此处不再提前拉取，避免启动早期用旧地址抢先拉 EPG 造成数据回退
                 }
             }
 

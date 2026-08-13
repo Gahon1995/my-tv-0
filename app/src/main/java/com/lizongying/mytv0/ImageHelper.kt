@@ -46,9 +46,6 @@ class ImageHelper(private val context: Context) {
 
     // ==================== 台标候选 URL 池（单一权威） ====================
 
-    /** fecemmingming 图库原始地址锚点：raw.githubusercontent 上的同名台标图。 */
-    private val FANMINGMING_RAW = "https://raw.githubusercontent.com/fanmingming/live/main/tv"
-
     /** 实测可用（2026-08 网络环境）的 raw.githubusercontent 代理镜像，按速度排序。 */
     private val RAW_MIRRORS = listOf(
         "https://gh.llkk.cc/",
@@ -56,24 +53,14 @@ class ImageHelper(private val context: Context) {
         "https://ghproxy.cn/",
     )
 
-    /** fanmingming 图床原站不可达时，把同一文件的 github 镜像也并入候选池。 */
-    private fun mirrorCandidates(raw: String): List<String> {
-        val out = mutableListOf(raw)
-        if (raw.startsWith("https://live.fanmingming.cn/")) {
-            // 例：https://live.fanmingming.cn/tv/CGTN西语.png → tv/CGTN西语.png
-            var path = raw.removePrefix("https://live.fanmingming.cn/")
-            // github 镜像路径已含 /tv，去掉 path 开头的 tv/ 避免双 tv/
-            if (path.startsWith("tv/")) path = path.removePrefix("tv/")
-            RAW_MIRRORS.forEach { out += "$it$FANMINGMING_RAW/$path" }
-        }
-        return out
-    }
+    /** 台标二级权威兜底：gitee suxuang/logo 图库（与内置/远端源同款，文件名 <频道名>.png）。 */
+    private val FALLBACK_LOGO_BASE = "https://gitee.com/suxuang/logo/raw/master/mylogo"
 
     /**
      * 为某一频道构建完整的台标候选 URL 列表（去重，按优先级排序）：
      * 1. 用户配置的 logo_base_url 前缀(<name>.png)
-     * 2. 频道自带 tv.logo（含 fanmingming 原站不可达时的镜像兜底）
-     * 3. fanmingming github raw（无论 url 是什么，作为二级权威兜底）
+     * 2. 频道自带 tv.logo
+     * 3. gitee suxuang/logo 图库(<name>.png，二级权威兜底)
      * 4. 对 raw.githubusercontent 类 URL 套实测可用的代理镜像
      *
      * @param key  频道名（name，取不到则用 title）
@@ -86,9 +73,14 @@ class ImageHelper(private val context: Context) {
             out += "$logoBase/$key.png"
         }
         if (url.isNotEmpty()) {
-            out += mirrorCandidates(url)
+            out += url
+            // tvg-logo 规范上是完整 URL（源作者负责），客户端不做通用加工；
+            // 但 gitee suxuang/logo 图库的文件名固定带 .png，源写漏后缀时特判补全
+            if (url.startsWith("$FALLBACK_LOGO_BASE/") && !url.endsWith(".png")) {
+                out += "$url.png"
+            }
         }
-        out += "$FANMINGMING_RAW/$key.png"
+        out += "$FALLBACK_LOGO_BASE/$key.png"
         // 给所有 raw.githubusercontent URL 追加代理镜像（去重）
         val raws = out.filter { it.startsWith("https://raw.githubusercontent.com") }.distinct()
         for (r in raws) {
@@ -189,10 +181,9 @@ class ImageHelper(private val context: Context) {
             .fitCenter()
             .into(imageView)
 
-        // 有真实来源 → 异步兜底下载，成功落盘后重绑
-        if (url.isNotEmpty()) {
-            triggerAsyncLoad(key, imageView, url)
-        }
+        // 无缓存 → 异步下载候选池（频道自带 tvg-logo 为空时也走 logo_base_url / 兜底图库），
+        // 成功落盘后重绑
+        triggerAsyncLoad(key, imageView, url)
     }
 
     private fun triggerAsyncLoad(

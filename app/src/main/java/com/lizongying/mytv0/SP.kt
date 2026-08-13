@@ -65,6 +65,9 @@ object SP {
     private const val KEY_LOGO_BASE_URL = "logo_base_url"
     private const val KEY_USER_OVERRIDE_EPG = "user_override_epg"
     private const val KEY_USER_OVERRIDE_CONFIG = "user_override_config"
+
+    // 最近一次频道源 m3u 头部解析出的 x-tvg-url（源指定的 EPG），源不带或换源后清空
+    private const val KEY_EPG_FROM_SOURCE = "epg_from_source"
     private const val KEY_GLASS_BLUR = "glass_blur"
 
     const val DEFAULT_CHANNEL_REVERSAL = true
@@ -73,8 +76,7 @@ object SP {
     const val DEFAULT_BOOT_STARTUP = false
     const val DEFAULT_CONFIG_URL = ""
     const val DEFAULT_PROXY = ""
-    const val DEFAULT_EPG =
-        "https://live.fanmingming.cn/e.xml,https://raw.githubusercontent.com/fanmingming/live/main/e.xml"
+    const val DEFAULT_EPG = "https://tvsources.p.gahon.top/epg/112114_xyz.xml"
     const val DEFAULT_CHANNEL = 0
     const val DEFAULT_SHOW_ALL_CHANNELS = false
     const val DEFAULT_COMPACT_MENU = true
@@ -212,6 +214,10 @@ object SP {
     var epg: String?
         get() = sp.getString(KEY_EPG, DEFAULT_EPG)
         set(value) = sp.edit().putString(KEY_EPG, value).apply()
+
+    var epgFromSource: String?
+        get() = sp.getString(KEY_EPG_FROM_SOURCE, "")
+        set(value) = sp.edit().putString(KEY_EPG_FROM_SOURCE, value).apply()
 
     var version: String?
         get() = sp.getString(KEY_VERSION, "")

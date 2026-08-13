@@ -52,7 +52,9 @@ class MainViewModel : ViewModel() {
     private var initialized = false
 
     private lateinit var cacheEPG: File
-    private var epgUrl = SP.epg
+
+    // 源 m3u 头部 x-tvg-url 指定的 EPG（持久化于 SP.epgFromSource）；为空表示当前源未指定
+    private var epgUrl = SP.epgFromSource
 
     private lateinit var imageHelper: ImageHelper
 
@@ -73,11 +75,13 @@ class MainViewModel : ViewModel() {
 
     fun updateEPG() {
         viewModelScope.launch {
+            // 源 m3u 指定的 EPG 优先，没有（或拉取失败）才用 SP.epg 当前值兜底
             var success = false
-            if (!epgUrl.isNullOrEmpty()) {
-                success = updateEPG(epgUrl!!)
+            val primary = epgUrl?.takeIf { it.isNotEmpty() }
+            if (!primary.isNullOrEmpty()) {
+                success = updateEPG(primary)
             }
-            if (!success && !SP.epg.isNullOrEmpty()) {
+            if (!success && !SP.epg.isNullOrEmpty() && SP.epg != primary) {
                 updateEPG(SP.epg!!)
             }
         }
@@ -91,10 +95,14 @@ class MainViewModel : ViewModel() {
                     if (it.startsWith("http")) {
                         Log.i(TAG, "update config url: $it")
                         importFromUrl(it)
-                        updateEPG()
                     }
                 }
             }
+            // EPG 拉取统一收口在这里（apply 与源解析都已完成，用最新地址），
+            // 避免启动早期用旧地址抢先拉取；preloadLogo 同样放这里，
+            // 确保 SP.logoBaseUrl 已 apply 后再构建台标候选
+            updateEPG()
+            preloadLogo()
         }
     }
 
@@ -221,6 +229,13 @@ class MainViewModel : ViewModel() {
                         break
                     }
                 }
+            }
+
+            // 一个频道都没匹配上视为失败：不覆盖已有内存 EPG，也不写空缓存
+            // （否则一次"解析成功但匹配不上"会把上次的好缓存冲掉）
+            if (toSet.isEmpty()) {
+                Log.w(TAG, "readEPG no channel matched")
+                return@withContext false
             }
             kotlin.runCatching { cacheEPG.writeText(gson.toJson(e1)) }
 
@@ -452,6 +467,8 @@ class MainViewModel : ViewModel() {
 
         when (string[0]) {
             '[' -> {
+                // JSON 源不携带 x-tvg-url，清掉可能残留的源指定 EPG
+                epgUrl = null
                 try {
                     list = gson.fromJson(string, typeTvList)
                     Log.i(TAG, "导入频道 ${list.size} $list")
@@ -462,6 +479,8 @@ class MainViewModel : ViewModel() {
             }
 
             '#' -> {
+                // 源指定的 EPG 只可能来自 m3u 的 x-tvg-url，先重置再在循环中解析
+                epgUrl = null
                 val lines = string.lines()
                 val nameRegex = Regex("""tvg-name="([^"]+)"""")
                 val logRegex = Regex("""tvg-logo="([^"]+)"""")
@@ -546,6 +565,8 @@ class MainViewModel : ViewModel() {
             }
 
             else -> {
+                // txt 源不携带 x-tvg-url，清掉可能残留的源指定 EPG
+                epgUrl = null
                 val lines = string.lines()
                 var group = ""
                 val l = mutableListOf<TV>()
@@ -597,6 +618,10 @@ class MainViewModel : ViewModel() {
                 Log.i(TAG, "导入频道 ${list.size}")
             }
         }
+
+        // 持久化源指定的 EPG（仅 '#' 分支解析到的 x-tvg-url，其余分支为空），
+        // 内容未变化 skip rebuild 时也能在下次启动继续使用
+        SP.epgFromSource = epgUrl ?: ""
 
         groupModel.initTVGroup()
 

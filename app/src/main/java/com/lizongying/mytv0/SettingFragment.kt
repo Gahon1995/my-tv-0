@@ -334,6 +334,7 @@ class SettingFragment : Fragment() {
             viewModel.setDisplaySeconds(SP.DEFAULT_DISPLAY_SECONDS)
 
             SP.epg = SP.DEFAULT_EPG
+            SP.epgFromSource = ""
             viewModel.updateEPG()
 
             SP.clearUserOverrides()
