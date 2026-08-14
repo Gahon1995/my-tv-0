@@ -160,10 +160,11 @@ class ListAdapter(
     }
 
     fun update(listTVModel: TVListModel) {
+        // 必须先换引用再同步 notify：post 延迟通知会让 itemCount 先变小、
+        // 而 RecyclerView 仍按旧状态布局，触发 "Inconsistency detected" 崩溃。
+        // 所有调用点都在主线程（按键/焦点回调），同步 notify 是安全且一致的。
         this.listTVModel = listTVModel
-        recyclerView.post {
-            notifyDataSetChanged()
-        }
+        notifyDataSetChanged()
     }
 
     fun clear() {
@@ -245,13 +246,16 @@ class ListAdapter(
     fun toPosition(position: Int) {
         Log.i(TAG, "position $position")
         recyclerView.post {
+            // 数据可能在 post 执行前已更新（分组切换/列表变短），越界位置先收敛到合法范围，
+            // 否则 scrollToPositionWithOffset + requestFocus 会撞上 "Inconsistency detected"
+            val p = position.coerceIn(0, (getItemCount() - 1).coerceAtLeast(0))
             (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(
-                position,
+                p,
                 0
             )
 
             recyclerView.postDelayed({
-                val viewHolder = recyclerView.findViewHolderForAdapterPosition(position)
+                val viewHolder = recyclerView.findViewHolderForAdapterPosition(p)
                 viewHolder?.itemView?.isSelected = true
                 viewHolder?.itemView?.requestFocus()
             }, 0)

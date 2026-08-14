@@ -3,13 +3,6 @@ package com.lizongying.mytv0
 import android.content.Context
 import android.os.Build
 import android.util.Log
-import com.lizongying.mytv0.requests.HttpClient
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
 import kotlin.system.exitProcess
 
 class MyTVExceptionHandler(val context: Context) : Thread.UncaughtExceptionHandler {
@@ -21,20 +14,12 @@ class MyTVExceptionHandler(val context: Context) : Thread.UncaughtExceptionHandl
                 )
             }\n"
 
-        runBlocking {
-            launch {
-                saveCrashInfoToFile(crashInfo)
-
-                withContext(Dispatchers.Main) {
-                    android.os.Process.killProcess(android.os.Process.myPid())
-                    exitProcess(1)
-                }
-            }
-        }
-    }
-
-    private suspend fun saveCrashInfoToFile(crashInfo: String) {
+        // 直接在崩溃线程（通常是主线程）同步打日志后退出。
+        // 此前 runBlocking + withContext(Dispatchers.Main) 会让主线程等自己空闲而永久死锁，
+        // 表现为崩溃后进程卡死（ANR）而不是立即退出。
         Log.e(TAG, crashInfo)
+        android.os.Process.killProcess(android.os.Process.myPid())
+        exitProcess(1)
     }
 
     companion object {
