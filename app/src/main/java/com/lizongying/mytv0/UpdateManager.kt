@@ -26,11 +26,10 @@ import java.util.concurrent.TimeUnit
 class UpdateManager(
     private var context: Context,
     private var versionCode: Long
-) :
-    ConfirmationFragment.ConfirmationListener,
-    DownloadDialogFragment.Listener {
+) : DownloadDialogFragment.Listener {
 
-    private enum class DownloadState { IDLE, DOWNLOADING, COMPLETED, FAILED }
+    /** PENDING_CONFIRM = 弹窗停在更新说明态,等用户点「立即更新」 */
+    private enum class DownloadState { IDLE, PENDING_CONFIRM, DOWNLOADING, COMPLETED, FAILED }
 
     private var pendingUpdate: RemoteUpdate? = null
     private var downloadJob: Job? = null
@@ -50,28 +49,41 @@ class UpdateManager(
         }
     }
 
+    /**
+     * 启动时后台自动检查更新：仅当服务端下发 auto_check=true 且版本更高时弹窗提示。
+     * 手动检查（checkAndUpdate）不受 auto_check 限制，始终弹窗。
+     */
+    fun autoCheck() {
+        CoroutineScope(Dispatchers.Main).launch {
+            if (downloadState != DownloadState.IDLE) return@launch
+            val update = getRemoteUpdate() ?: return@launch
+            if (update.auto_check != true) {
+                Log.i(TAG, "auto check skipped, auto_check not enabled")
+                return@launch
+            }
+            if (update.version_code!!.toLong() <= versionCode) {
+                Log.i(TAG, "auto check skipped, already latest")
+                return@launch
+            }
+            Log.i(TAG, "auto check found update ${update.version_name}")
+            pendingUpdate = update
+            showUpdateDialog(update)
+        }
+    }
+
     fun checkAndUpdate() {
         Log.i(TAG, "checkAndUpdate")
         "正在检查更新…".showToast()
         CoroutineScope(Dispatchers.Main).launch {
             var message = "未获取到更新信息"
-            var hasUpdate = false
             var newVersion: RemoteUpdate? = null
             try {
                 val update = getRemoteUpdate()
                 Log.i(TAG, "remote update: ${update?.version_name} ${update?.version_code}, local $versionCode")
                 if (update != null) {
                     if (update.version_code!!.toLong() > versionCode) {
-                        // 有更新：展示版本 + 更新说明 + 下载链接，由用户确认
-                        hasUpdate = true
+                        // 有更新：统一弹窗展示版本 + 更新说明，同界面完成下载/安装
                         newVersion = update
-                        message = buildString {
-                            append("检测到新版本 ${update.version_name}")
-                            update.changelog?.takeIf { it.isNotBlank() }?.let {
-                                append("\n\n更新说明：\n$it")
-                            }
-                            append("\n\n下载链接：\n${update.apk_url}")
-                        }
                     } else {
                         message = "已是最新版本，不需要更新"
                     }
@@ -86,23 +98,23 @@ class UpdateManager(
                 Log.e(TAG, "Error occurred: ${e.message}", e)
                 message = "检查更新失败：${e.message}"
             }
-            pendingUpdate = newVersion
             // 只有检测到有更新时才弹窗，其余情况用 Toast 提示
-            if (hasUpdate) {
-                updateUI(message, true)
+            if (newVersion != null) {
+                pendingUpdate = newVersion
+                showUpdateDialog(newVersion)
             } else {
                 message.showToast()
             }
         }
     }
 
-    private fun updateUI(text: String, update: Boolean) {
+    private fun showUpdateDialog(update: RemoteUpdate) {
         if (downloadState == DownloadState.DOWNLOADING) {
             "正在下载更新中…".showToast()
             return
         }
-        val dialog = ConfirmationFragment(this@UpdateManager, text, update)
-        dialog.show((context as FragmentActivity).supportFragmentManager, TAG)
+        downloadState = DownloadState.PENDING_CONFIRM
+        showDownloadDialog()?.showChangelog(update.version_name, update.changelog)
     }
 
     private fun startDownload(update: RemoteUpdate) {
@@ -307,15 +319,12 @@ class UpdateManager(
         }
     }
 
-    override fun onConfirm() {
-        Log.i(TAG, "onConfirm $pendingUpdate")
+    // ---- DownloadDialogFragment.Listener ----
+
+    override fun onConfirmUpdate() {
+        Log.i(TAG, "onConfirmUpdate $pendingUpdate")
         pendingUpdate?.let { startDownload(it) }
     }
-
-    override fun onCancel() {
-    }
-
-    // ---- DownloadDialogFragment.Listener ----
 
     override fun onCancelDownload() {
         Log.i(TAG, "onCancelDownload")
@@ -334,6 +343,8 @@ class UpdateManager(
 
     override fun onDialogDismissed() {
         downloadDialog = null
+        // 关闭弹窗后重置流程状态,下次检查更新可重新弹窗
+        downloadState = DownloadState.IDLE
     }
 
     override fun onDialogAttached(dialog: DownloadDialogFragment) {
@@ -345,6 +356,8 @@ class UpdateManager(
         downloadDialog = dialog
         // 弹窗重建后回灌当前状态
         when (downloadState) {
+            DownloadState.PENDING_CONFIRM ->
+                dialog.showChangelog(pendingUpdate?.version_name, pendingUpdate?.changelog)
             DownloadState.DOWNLOADING -> dialog.showDownloading(pendingUpdate?.version_name)
             DownloadState.COMPLETED -> dialog.showCompleted()
             DownloadState.FAILED -> dialog.showFailed(downloadFailedReason ?: "未知错误")

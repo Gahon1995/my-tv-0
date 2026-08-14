@@ -24,7 +24,10 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.lizongying.mytv0.databinding.SettingsWebBinding
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.lizongying.mytv0.models.TVModel
 import java.util.Locale
 import kotlin.math.abs
@@ -54,6 +57,8 @@ class MainActivity : AppCompatActivity() {
     private var server: SimpleServer? = null
 
     private lateinit var viewModel: MainViewModel
+
+    private var updateManager: UpdateManager? = null
 
     private var isSafeToPerformFragmentTransactions = false
 
@@ -107,6 +112,14 @@ class MainActivity : AppCompatActivity() {
 
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
         viewModel.init(this)
+
+        // 启动后延迟后台检查更新：等首屏起播与远端配置拉取稳定后再触发，
+        // 是否检查由服务端下发 auto_check 决定（发现新版本自动弹窗）
+        updateManager = UpdateManager(this, appVersionCode)
+        lifecycleScope.launch {
+            delay(AUTO_CHECK_DELAY_MS)
+            updateManager?.autoCheck()
+        }
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
@@ -865,6 +878,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        updateManager?.destroy()
+        updateManager = null
         server?.stop()
     }
 
@@ -889,5 +904,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
+        /** 启动后延迟多久执行后台自动检查更新（ms） */
+        private const val AUTO_CHECK_DELAY_MS = 5000L
     }
 }

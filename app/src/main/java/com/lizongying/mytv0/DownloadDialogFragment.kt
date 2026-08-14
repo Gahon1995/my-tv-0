@@ -16,15 +16,19 @@ import com.lizongying.mytv0.databinding.DownloadDialogBinding
 import java.util.Locale
 
 /**
- * APK 下载进度弹窗,三态:下载中(进度条+百分比)/ 下载完成(立即安装)/ 失败(重试)。
- * 状态由 UpdateManager 持有,本弹窗是纯视图,经 [showDownloading]/[showProgress]/
- * [showCompleted]/[showFailed] 驱动;用户操作经 [Listener] 回传。
+ * APK 更新统一弹窗,四态:更新说明(版本号+changelog)/ 下载中(进度条+百分比)/
+ * 下载完成(立即安装)/ 失败(重试)。状态由 UpdateManager 持有,本弹窗是纯视图,
+ * 经 [showChangelog]/[showDownloading]/[showProgress]/[showCompleted]/[showFailed]
+ * 驱动;用户操作经 [Listener] 回传。
  */
 class DownloadDialogFragment(
     private var listener: Listener?
 ) : DialogFragment() {
 
     interface Listener {
+        /** 更新说明态点「立即更新」 */
+        fun onConfirmUpdate()
+
         /** 下载中取消(返回键或「取消」按钮) */
         fun onCancelDownload()
 
@@ -34,19 +38,19 @@ class DownloadDialogFragment(
         /** 完成态点「立即安装」 */
         fun onInstall()
 
-        /** 用户关闭弹窗(完成/失败态返回键、「暂不安装」、「取消」) */
+        /** 用户关闭弹窗(更新说明/完成/失败态返回键、「暂不更新」、「暂不安装」、「取消」) */
         fun onDialogDismissed()
 
         /** 弹窗 view 创建后回调,用于 UpdateManager 保存引用并回灌当前状态 */
         fun onDialogAttached(dialog: DownloadDialogFragment)
     }
 
-    private enum class State { DOWNLOADING, COMPLETED, FAILED }
+    private enum class State { CHANGELOG, DOWNLOADING, COMPLETED, FAILED }
 
     private var _binding: DownloadDialogBinding? = null
     private val binding get() = _binding
 
-    private var state = State.DOWNLOADING
+    private var state = State.CHANGELOG
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,6 +90,7 @@ class DownloadDialogFragment(
 
         b.primaryButton.setOnClickListener {
             when (state) {
+                State.CHANGELOG -> listener?.onConfirmUpdate()
                 State.COMPLETED -> listener?.onInstall()
                 State.FAILED -> listener?.onRetryDownload()
                 State.DOWNLOADING -> {
@@ -116,7 +121,7 @@ class DownloadDialogFragment(
     }
 
     override fun onCancel(dialog: DialogInterface) {
-        // 下载中返回键 → 取消下载;完成/失败态返回键 → 仅关闭弹窗(文件保留)
+        // 下载中返回键 → 取消下载;其余态返回键 → 仅关闭弹窗
         if (state == State.DOWNLOADING) {
             listener?.onCancelDownload()
         } else {
@@ -137,11 +142,32 @@ class DownloadDialogFragment(
         _binding = null
     }
 
+    /** 更新说明态:版本号徽章 + 可滚动 changelog,不展示下载链接 */
+    fun showChangelog(versionName: String?, changelog: String?) {
+        state = State.CHANGELOG
+        binding?.let { b ->
+            b.title.text = "发现新版本"
+            b.versionBadge.visibility = View.VISIBLE
+            b.versionBadge.text = if (versionName.isNullOrEmpty()) "新版本" else "新版本 v$versionName"
+            b.changelogCard.visibility = View.VISIBLE
+            b.changelog.text = changelog?.takeIf { it.isNotBlank() } ?: "暂无更新说明"
+            // 弹窗反复显示时回到顶部
+            b.changelogScroll.scrollTo(0, 0)
+            b.progressArea.visibility = View.GONE
+            b.primaryButton.visibility = View.VISIBLE
+            b.primaryButton.text = "立即更新"
+            b.secondaryButton.text = "暂不更新"
+        }
+    }
+
     fun showDownloading(versionName: String?) {
         state = State.DOWNLOADING
         binding?.let { b ->
             b.title.text =
                 if (versionName.isNullOrEmpty()) "正在下载" else "正在下载 $versionName"
+            b.versionBadge.visibility = View.GONE
+            b.changelogCard.visibility = View.GONE
+            b.progressArea.visibility = View.VISIBLE
             b.subtitle.visibility = View.GONE
             b.progressBar.isIndeterminate = true
             b.progressBar.progress = 0
@@ -179,6 +205,7 @@ class DownloadDialogFragment(
         state = State.COMPLETED
         binding?.let { b ->
             b.title.text = "下载完成"
+            b.progressArea.visibility = View.VISIBLE
             b.subtitle.visibility = View.VISIBLE
             b.subtitle.text = "点击「立即安装」升级到新版本"
             b.progressBar.isIndeterminate = false
@@ -194,6 +221,7 @@ class DownloadDialogFragment(
         state = State.FAILED
         binding?.let { b ->
             b.title.text = "下载失败"
+            b.progressArea.visibility = View.VISIBLE
             b.subtitle.visibility = View.VISIBLE
             b.subtitle.text = reason
             b.progressBar.isIndeterminate = false

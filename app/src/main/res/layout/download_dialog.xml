@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/download_panel"
-    android:layout_width="420dp"
+    android:layout_width="480dp"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:gravity="center"
+    android:gravity="center_horizontal"
     android:background="@drawable/bg_panel_rounded"
-    android:padding="20dp">
+    android:padding="24dp">
 
+    <!-- 标题：发现新版本 / 正在下载 / 下载完成 / 下载失败 -->
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/title"
         android:layout_width="wrap_content"
@@ -15,43 +16,106 @@
         android:textColor="@color/title_blur"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:text="正在下载" />
+        android:text="发现新版本" />
 
+    <!-- 版本号徽章（仅更新说明态可见） -->
     <androidx.appcompat.widget.AppCompatTextView
-        android:id="@+id/subtitle"
+        android:id="@+id/version_badge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:gravity="center"
-        android:textColor="@color/description_blur"
-        android:textSize="13sp" />
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_capsule"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:textColor="@color/focus"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:text="新版本" />
 
+    <!-- 更新说明卡片（仅更新说明态可见，D-pad 可上下滚动） -->
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:id="@+id/changelog_card"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <ProgressBar
-            android:id="@+id/progress_bar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="240dp"
-            android:layout_height="8dp"
-            android:max="100"
-            android:progress="0"
-            android:progressDrawable="@drawable/custom_progress_drawable" />
+        android:layout_marginTop="16dp"
+        android:orientation="vertical"
+        android:background="@drawable/bg_card_surface"
+        android:padding="14dp">
 
         <androidx.appcompat.widget.AppCompatTextView
-            android:id="@+id/progress_pct"
-            android:layout_width="56dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:gravity="end"
             android:textColor="@color/description_blur"
-            android:textSize="14sp"
-            android:fontFeatureSettings="tnum"
-            android:text="0%" />
+            android:textSize="12sp"
+            android:text="更新说明" />
+
+        <ScrollView
+            android:id="@+id/changelog_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:maxHeight="260dp"
+            android:focusable="true"
+            android:scrollbars="vertical">
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/changelog"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lineSpacingExtra="4dp"
+                android:textColor="@color/title_blur"
+                android:textSize="13sp"
+                android:text="暂无更新说明" />
+        </ScrollView>
+    </LinearLayout>
+
+    <!-- 进度区（下载中 / 完成 / 失败态可见） -->
+    <LinearLayout
+        android:id="@+id/progress_area"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ProgressBar
+                android:id="@+id/progress_bar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="240dp"
+                android:layout_height="8dp"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable" />
+
+            <androidx.appcompat.widget.AppCompatTextView
+                android:id="@+id/progress_pct"
+                android:layout_width="56dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:gravity="end"
+                android:textColor="@color/description_blur"
+                android:textSize="14sp"
+                android:fontFeatureSettings="tnum"
+                android:text="0%" />
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:textColor="@color/description_blur"
+            android:textSize="12sp" />
     </LinearLayout>
 
     <LinearLayout
@@ -72,7 +136,7 @@
             android:paddingEnd="24dp"
             android:textColor="@color/description_blur"
             android:textSize="13sp"
-            android:text="取消" />
+            android:text="暂不更新" />
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/primary_button"
@@ -86,6 +150,6 @@
             android:paddingEnd="24dp"
             android:textColor="@color/description_blur"
             android:textSize="13sp"
-            android:text="立即安装" />
+            android:text="立即更新" />
     </LinearLayout>
 </LinearLayout>

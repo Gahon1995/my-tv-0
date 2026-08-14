@@ -22,4 +22,6 @@ data class RemoteUpdate(
     val apk_name: String?,
     val apk_url: String?,
     val changelog: String?,
+    /** 服务端配置：启动时是否自动检查更新（true 时发现新版本自动弹窗） */
+    val auto_check: Boolean? = null,
 )
